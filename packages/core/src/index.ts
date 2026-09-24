@@ -8,3 +8,4 @@ export * from "./analytics.js";
 export * from "./review.js";
 export * from "./workbook.js";
 export * from "./xlsx.js";
+export * from "./mapping.js";
