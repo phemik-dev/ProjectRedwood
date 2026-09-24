@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+<title>Redwood mark</title>
+<rect width="64" height="64" rx="14" fill="#102B36"/>
+<path d="M18 18h13c10 0 16 4.5 16 12.3 0 5-2.5 8.6-7.2 10.5L48 50H37.2l-7.1-8.2H27V50h-9V18Zm9 7.7v8.6h4.4c4.5 0 6.7-1.5 6.7-4.4 0-2.8-2.2-4.2-6.7-4.2H27Z" fill="#F5F7F4"/>
+<circle cx="48" cy="17" r="5" fill="#2F746F"/>
+</svg>
