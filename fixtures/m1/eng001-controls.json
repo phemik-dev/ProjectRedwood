@@ -1,0 +1,32 @@
+{
+  "fixture": "ENG001",
+  "currency": "USD",
+  "counts": {
+    "claims": 240,
+    "payment_rows": 336,
+    "open_ar_rows": 109
+  },
+  "controls_cents": {
+    "billed": 10964656,
+    "expected_allowed": 6911688,
+    "matched_cash": 5320559,
+    "unmatched_cash": 32145,
+    "open_ar": 1591129,
+    "ar_120_plus": 902152
+  },
+  "reconciliation_cents": {
+    "all_june_cash_to_gl_difference": 75000,
+    "matched_june_cash_to_gl_difference": 107145,
+    "ar_to_gl_difference": 140501
+  },
+  "cutoff": {
+    "valuation_date": "2026-06-30",
+    "baseline_cash_after_valuation_date": 0
+  },
+  "expected_findings": [
+    "ENG001-CASH-GL-ALL",
+    "ENG001-CASH-GL-MATCHED",
+    "ENG001-AR-GL"
+  ],
+  "note": "Independent control fixture. The unresolved differences are expected findings, not balancing entries."
+}
