@@ -1,0 +1,22 @@
+{
+  "decision_id": "DEC-ENG001-G3-001",
+  "deal_id": "ENG001",
+  "method_id": "redwood.physician_group.qor",
+  "method_version": "0.1.0",
+  "run_id": "RUN-ENG001-M1-BASELINE",
+  "gate_id": "G3",
+  "decision": "defer",
+  "reviewer": {
+    "name": "UNASSIGNED",
+    "role": "Healthcare diligence reviewer",
+    "organization": null
+  },
+  "timestamp": "2026-09-24T10:45:00Z",
+  "rationale": "A/R-to-GL difference of $1,405.01 is unresolved. Redwood must preserve the difference as a finding and must not force the bridge to balance.",
+  "evidence_refs": [
+    "ENG001-AR-GL",
+    "fixtures/m1/eng001-controls.json"
+  ],
+  "supersedes_decision_id": null,
+  "invalidated_by_run_id": null
+}
