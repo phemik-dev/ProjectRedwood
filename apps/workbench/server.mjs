@@ -2,9 +2,10 @@ import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { extname } from "node:path";
 import { randomUUID } from "node:crypto";
-import { analyze, compileWorkbook, ingestCsvSources, reconcile, xlsxToSourceFile } from "../../packages/core/dist/index.js";
+import { analyze, compileWorkbook, createDecision, ingestCsvSources, reconcile, xlsxToSourceFile } from "../../packages/core/dist/index.js";
+import { loadRuns, saveRun } from "./store.mjs";
 
-const runs = new Map();
+const runs = await loadRuns();
 const profile = { id: "redwood-physician-group-qor-draft-v0.1", name: "Redwood Physician Group QoR DRAFT v0.1", version: "0.1.0", status: "engineering-hypothesis-not-professionally-approved", arithmeticToleranceCents: 1n, ageingBasis: "service_date", recoveryMethod: "age_bucket_rates", recoveryRates: { "0-30": 0.9, "31-60": 0.7, "61-90": 0.5, "91-120": 0.3, "121+": 0.1 } };
 const json = (response, status, value) => { response.writeHead(status, { "content-type": "application/json" }); response.end(JSON.stringify(value, (_, item) => typeof item === "bigint" ? item.toString() : item)); };
 const body = async (request) => { const chunks = []; for await (const chunk of request) chunks.push(chunk); return JSON.parse(Buffer.concat(chunks).toString("utf8")); };
@@ -17,8 +18,10 @@ createServer(async (request, response) => {
     if (request.method === "GET" && url.pathname === "/api/method-profile") return json(response, 200, profile);
     if (request.method === "POST" && url.pathname === "/api/runs") {
       const input = await body(request); const candidates = input.files.filter((file) => ["claims", "payments", "adjustments", "ar_snapshot", "general_ledger"].includes(file.type) && typeof file.content === "string"); const accepted = await Promise.all(candidates.map((file) => file.format === "xlsx" ? xlsxToSourceFile({ name: file.name, type: file.type, content: Buffer.from(file.content, "base64"), worksheet: file.worksheet }) : file));
-      const deal = ingestCsvSources(input.dealId || `ENG-${new Date().getFullYear()}`, accepted); const analysis = analyze(deal, profile); const { reconciliations, findings } = reconcile(deal, profile); const id = randomUUID(); const run = { id, deal, analysis, reconciliations, findings, profile, createdAt: new Date().toISOString() }; runs.set(id, run); return json(response, 201, run);
+      const deal = ingestCsvSources(input.dealId || `ENG-${new Date().getFullYear()}`, accepted); const analysis = analyze(deal, profile); const { reconciliations, findings } = reconcile(deal, profile); const id = randomUUID(); const run = { id, deal, analysis, reconciliations, findings, decisions: [], profile, createdAt: new Date().toISOString() }; runs.set(id, run); await saveRun(run); return json(response, 201, run);
     }
+    const decision = url.pathname.match(/^\/api\/runs\/([^/]+)\/decisions$/);
+    if (request.method === "POST" && decision) { const run = runs.get(decision[1]); if (!run) return json(response, 404, { error: "Analysis run not found" }); const input = await body(request); const record = createDecision({ runId: run.id, methodProfileId: profile.id, methodVersion: profile.version, gate: input.gate, decision: input.decision, reviewer: input.reviewer, role: input.role, rationale: input.rationale, evidenceReferences: input.evidenceReferences ?? [] }); run.decisions.push(record); await saveRun(run); return json(response, 201, record); }
     const workbook = url.pathname.match(/^\/api\/runs\/([^/]+)\/workbook$/);
     if (request.method === "GET" && workbook) { const run = runs.get(workbook[1]); if (!run) return json(response, 404, { error: "Analysis run not found" }); const file = await compileWorkbook({ deal: run.deal, analysis: run.analysis, reconciliations: run.reconciliations, findings: run.findings, methodId: profile.id, methodVersion: profile.version, runId: run.id, recoveryRates: profile.recoveryRates }); response.writeHead(200, { "content-type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "content-disposition": `attachment; filename=redwood-${run.id}.xlsx` }); return response.end(file); }
     const lookup = url.pathname.match(/^\/api\/runs\/([^/]+)$/);
