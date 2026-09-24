@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hiveforge.ai/schemas/conformance-record/v1",
+  "title": "HiveForge Intent-Reality Conformance Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["policyVersion", "work", "intent", "execution", "conformance", "completion"],
+  "properties": {
+    "policyVersion": { "const": "hiveforge.intent-reality.v1" },
+    "work": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "title", "scope", "authority"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "scope": { "type": "string", "enum": ["routine", "substantial", "critical"] },
+        "authority": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "intent": {
+      "type": "object", "additionalProperties": false,
+      "required": ["productGoal", "capability", "architecturalIntent", "invariants", "acceptanceEvidence"],
+      "properties": {
+        "productGoal": { "type": "string", "minLength": 1 },
+        "capability": { "type": "string", "minLength": 1 },
+        "architecturalIntent": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "invariants": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "acceptanceEvidence": { "type": "array", "minItems": 1, "items": { "type": "string" } }
+      }
+    },
+    "execution": {
+      "type": "object", "additionalProperties": false,
+      "required": ["observedBehaviour", "evidence"],
+      "properties": {
+        "decisions": { "type": "array", "items": { "type": "object", "additionalProperties": false, "required": ["decision", "rationale"], "properties": { "decision": { "type": "string" }, "rationale": { "type": "string" } } } },
+        "observedBehaviour": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "evidence": { "type": "array", "minItems": 1, "items": { "type": "object", "additionalProperties": false, "required": ["kind", "reference", "result"], "properties": { "kind": { "type": "string" }, "reference": { "type": "string" }, "result": { "type": "string" } } } }
+      }
+    },
+    "conformance": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "divergences"],
+      "properties": {
+        "status": { "enum": ["conforms", "conforms-with-understood-divergence", "incomplete"] },
+        "divergences": { "type": "array", "items": { "type": "object", "additionalProperties": false, "required": ["expected", "observed", "classification", "status"], "properties": { "expected": { "type": "string" }, "observed": { "type": "string" }, "classification": { "enum": ["defect", "stale-intent", "environment", "valid-undocumented-path", "missing-test", "architectural-weakness", "authority-violation", "other"] }, "status": { "enum": ["open", "understood", "resolved", "accepted-by-review"] } } } }
+      }
+    },
+    "learning": { "type": "object", "additionalProperties": false, "properties": { "recurringPattern": { "type": "string" }, "improvementProposal": { "type": "string" }, "durableKnowledge": { "type": "array", "items": { "type": "string" } } } },
+    "completion": { "type": "object", "additionalProperties": false, "required": ["capabilitySatisfied", "invariantsPreserved", "evidenceSufficient"], "properties": { "capabilitySatisfied": { "type": "boolean" }, "invariantsPreserved": { "type": "boolean" }, "evidenceSufficient": { "type": "boolean" }, "reviewRequired": { "type": "boolean" } } }
+  }
+}

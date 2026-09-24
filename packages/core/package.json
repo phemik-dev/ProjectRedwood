@@ -1,0 +1,23 @@
+{
+  "name": "@redwood/core",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": "./dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "tsx --test src/**/*.test.ts",
+    "demo": "tsx src/demo.ts"
+  },
+  "dependencies": {
+    "exceljs": "^4.4.0",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  }
+}

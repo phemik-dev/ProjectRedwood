@@ -1,0 +1,17 @@
+import ExcelJS from "exceljs";
+import { money } from "./money.js";
+import type { QorAnalysis } from "./analytics.js";
+import type { CanonicalDeal, Finding, Reconciliation } from "./types.js";
+
+export async function compileWorkbook(input: { deal: CanonicalDeal; analysis: QorAnalysis; reconciliations: Reconciliation[]; findings: Finding[]; methodId: string; methodVersion: string; runId: string }): Promise<Buffer> {
+  const workbook = new ExcelJS.Workbook(); workbook.creator = "Redwood"; workbook.properties.date1904 = false;
+  const summary = workbook.addWorksheet("Executive Summary"); summary.addRows([["Redwood Quality of Revenue Databook"], ["Run ID", input.runId], ["Method", `${input.methodId} ${input.methodVersion}`], [], ["Metric", "Value"], ["Gross charge", Number(input.analysis.grossCharge) / 100], ["Allowed amount", Number(input.analysis.allowedAmount) / 100], ["Observed cash", Number(input.analysis.observedCash) / 100], ["Open A/R", Number(input.analysis.openAr) / 100], ["Expected remaining cash", Number(input.analysis.expectedRemainingCash) / 100], ["Realizable revenue", null]]); summary.getCell("B11").value = { formula: "B8+B10" };
+  summary.getCell("B11").numFmt = '$#,##0.00;[Red]-$#,##0.00'; summary.getColumn(1).width = 30; summary.getColumn(2).width = 24;
+  const recon = workbook.addWorksheet("Reconciliation"); recon.addRow(["Control", "Left total", "Right total", "Difference", "Arithmetic status", "Materiality", "Evidence"]); input.reconciliations.forEach((r) => { const row = recon.addRow([r.label, Number(r.leftTotal) / 100, Number(r.rightTotal) / 100, null, r.arithmeticStatus, r.materialityStatus, r.evidence.join("; ")]); row.getCell(4).value = { formula: `B${row.number}-C${row.number}` }; }); recon.getRow(1).font = { bold: true }; [2,3,4].forEach((column) => recon.getColumn(column).numFmt = '$#,##0.00;[Red]-$#,##0.00');
+  const assumptions = workbook.addWorksheet("Assumptions"); assumptions.addRows([["Method profile", input.methodId], ["Version", input.methodVersion], ["Professional materiality", "Unset until approved"], ["Recovery methodology", "Method-profile configured; approval-bound"]]);
+  const findings = workbook.addWorksheet("Findings"); findings.addRow(["Status", "Title", "Detail", "Evidence"]); input.findings.forEach((f) => findings.addRow([f.status, f.title, f.detail, f.references.join("; ")]));
+  const trace = workbook.addWorksheet("Source Trace"); trace.addRow(["Source file", "File hash", "Source row", "Record type", "Record ID"]); for (const claim of input.deal.claims) trace.addRow([claim.lineage.sourceFileName, claim.lineage.sourceFileHash, claim.lineage.sourceRowId, "Claim", claim.id]); for (const event of input.deal.cashEvents) trace.addRow([event.lineage.sourceFileName, event.lineage.sourceFileHash, event.lineage.sourceRowId, "CashEvent", event.id]); for (const ar of input.deal.receivables) trace.addRow([ar.lineage.sourceFileName, ar.lineage.sourceFileHash, ar.lineage.sourceRowId, "Receivable", ar.id]);
+  for (const sheet of workbook.worksheets) { sheet.views = [{ state: "frozen", ySplit: 1 }]; sheet.getRow(1).font = { bold: true, color: { argb: "FF102B36" } }; sheet.columns.forEach((column) => { column.width = Math.max(column.width ?? 10, 18); }); }
+  return Buffer.from(await workbook.xlsx.writeBuffer());
+}
+export function workbookNarrative(analysis: QorAnalysis): string { return `Observed cash is ${money(analysis.observedCash)}; expected remaining cash is ${money(analysis.expectedRemainingCash)} and remains distinct from observed cash.`; }

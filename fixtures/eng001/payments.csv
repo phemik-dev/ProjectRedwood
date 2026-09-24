@@ -1,0 +1,4 @@
+payment_id,claim_id,payment_date,amount,payer,cash_event_type
+ENG001-P001,ENG001-C001,2026-06-10,50000.00,Medicare,payer_payment
+ENG001-P002,ENG001-C002,2026-06-29,3205.59,BCBS Texas,payer_payment
+ENG001-P003,,2026-06-30,321.45,Unapplied,unapplied_cash

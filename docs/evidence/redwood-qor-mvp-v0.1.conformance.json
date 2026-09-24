@@ -1,0 +1,27 @@
+{
+  "policyVersion": "hiveforge.intent-reality.v1",
+  "work": {
+    "id": "redwood-qor-mvp-v0.1",
+    "title": "Build the Redwood physician-group QoR MVP",
+    "scope": "critical",
+    "authority": ["Direct user-approved HIVEFORGE BUILD BRIEF: Project Redwood — Physician Group QoR MVP v0.1"]
+  },
+  "intent": {
+    "productGoal": "Transform unseen physician-group transaction source files into a canonical model, reviewed QoR analysis, and populated formula-driven XLSX without manual workbook rebuilding.",
+    "capability": "Provide an inspectable ingestion-to-workbook vertical slice with configurable MethodProfile, exact-cent calculations, explicit reconciliation differences, professional-review primitives, and lineaged output.",
+    "architecturalIntent": ["Methodology is executable, versioned configuration rather than global hard-coded policy.", "Source evidence, canonical model, calculations, professional decisions, and workbook output remain separable artifacts.", "The frozen Higgsfield prototype is UX reference only."],
+    "invariants": ["Redwood never silently forces financial populations to balance.", "Blanks, signs, unavailable values, and source lineage are preserved or explicitly quarantined.", "Observed, expected, and adjusted amounts remain distinct.", "Professional policy remains configurable and approval-bound."],
+    "acceptanceEvidence": ["Core unit tests cover money parsing, reconciliation visibility, recovery sensitivity, and formula-driven workbook structure.", "ENG001 demo reproduces stated control differences with source lineage.", "Generated XLSX opens through ExcelJS and contains required formula and trace sheets."]
+  },
+  "execution": {
+    "decisions": [{"decision":"Use a TypeScript pnpm workspace with a pure core package before introducing persistence or UI.","rationale":"A pure evidence-producing engine provides a testable canonical foundation and does not allow the reference prototype to dictate architecture."}, {"decision":"Seed a DRAFT method contract because the claimed pre-existing artifact was absent.","rationale":"The seed is explicitly not professional authority; the absence is recorded as a known divergence."}],
+    "observedBehaviour": ["The repository baseline had no method contract, package manifest, canonical application, or fixture corpus.", "The core implementation imports CSV data string-first, retains hashes and source rows, produces visible differences, and generates a formula-bearing XLSX in the ENG001 demo."],
+    "evidence": [{"kind":"test","reference":"pnpm --filter @redwood/core test","result":"4 tests passed: money parsing, difference visibility, recovery sensitivity, and XLSX structural formula audit."}, {"kind":"artifact","reference":"artifacts/ENG001-redwood-draft.xlsx","result":"Generated from the ENG001 synthetic fixture with Executive Summary, Reconciliation, Assumptions, Findings, and Source Trace sheets."}, {"kind":"trace","reference":"pnpm --filter @redwood/core demo","result":"Reproduced $750.00 all-cash/GL, $1,071.45 matched-cash/GL, and $1,405.01 A/R/GL differences without balancing entries."}]
+  },
+  "conformance": {
+    "status": "conforms-with-understood-divergence",
+    "divergences": [{"expected":"The build brief says a pre-existing methodology/redwood-qor-v0.1.json contract exists.","observed":"No methodology directory or contract was in the baseline.","classification":"stale-intent","status":"understood"}, {"expected":"The MVP includes CSV and XLSX ingestion, persistence, a professional workbench, and full multi-sheet QoR coverage.","observed":"The first vertical slice currently implements CSV ingestion, a core engine, review primitives, and a five-sheet workbook; XLSX adapter exists but is not yet integration-tested, and persistence/workbench remain incomplete.","classification":"missing-test","status":"open"}]
+  },
+  "learning": {"recurringPattern":"Financial source controls can have similar labels with distinct populations; preserving population definitions is necessary to avoid false contradictions.","improvementProposal":"Persist first-class source/control/mapping artifacts before expanding UI so every result and decision can be reconstructed.","durableKnowledge":["docs/architecture/decisions/ADR-001-method-profiles.md","docs/operations/known-divergences/method-contract-absent.md","fixtures/eng001/README.md"]},
+  "completion": {"capabilitySatisfied": false,"invariantsPreserved": true,"evidenceSufficient": false,"reviewRequired": true}
+}

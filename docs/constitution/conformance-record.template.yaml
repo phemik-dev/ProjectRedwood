@@ -1,0 +1,44 @@
+# Copy to docs/evidence/<work-id>.conformance.yaml for substantial work.
+# Validate against conformance-record.schema.json when a JSON Schema validator is available.
+policyVersion: hiveforge.intent-reality.v1
+work:
+  id: example-capability
+  title: Describe the capability
+  scope: substantial # routine | substantial | critical
+  authority:
+    - User request / approved product authority
+intent:
+  productGoal: State the product-level goal
+  capability: State the behaviour this work must provide
+  architecturalIntent:
+    - State the relevant architecture constraint
+  invariants:
+    - State an invariant that must remain true
+  acceptanceEvidence:
+    - Name the test, artifact, trace, or reproducible observation that proves it
+execution:
+  decisions:
+    - decision: State a meaningful decision
+      rationale: Explain why it preserves higher-level intent
+  observedBehaviour:
+    - State what execution demonstrated
+  evidence:
+    - kind: test | trace | artifact | review | deployment
+      reference: Relative path, command, run identifier, or external evidence reference
+      result: State the observed result
+conformance:
+  status: conforms # conforms | conforms-with-understood-divergence | incomplete
+  divergences: []
+  # - expected: Intended state
+  #   observed: Actual state
+  #   classification: defect # see schema enum
+  #   status: open # open | understood | resolved | accepted-by-review
+learning:
+  recurringPattern: null
+  improvementProposal: null
+  durableKnowledge: []
+completion:
+  capabilitySatisfied: false
+  invariantsPreserved: false
+  evidenceSufficient: false
+  reviewRequired: false

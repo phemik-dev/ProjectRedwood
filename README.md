@@ -20,6 +20,10 @@ The first implementation vertical is a U.S. physician-group transaction.
 
 Implementation will be executed through HiveForge against the milestone and acceptance contract in `docs/HIVEFORGE_BUILD_PLAN.md`.
 
+## Engineering constitution and conformance
+
+HiveForge work follows the [Intent–Reality Coding Philosophy](docs/constitution/HIVEFORGE_CODING_PHILOSOPHY.md). The root [AGENTS.md](AGENTS.md) operationalizes it for this repository. For substantial work, create a machine-readable conformance record from [`docs/constitution/conformance-record.template.yaml`](docs/constitution/conformance-record.template.yaml), preserve unresolved divergence records under [`docs/operations/known-divergences/`](docs/operations/known-divergences/), and record reviewed architectural decisions under [`docs/architecture/decisions/`](docs/architecture/decisions/).
+
 ## Important rule
 
 Redwood must surface unreconciled differences; it must never silently force financial populations to balance.

@@ -1,0 +1,17 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import ExcelJS from "exceljs";
+import { analyze, compileWorkbook, ingestCsvSources, parseMoney, reconcile, xlsxToSourceFile, type MethodProfile } from "./index.js";
+
+const method: MethodProfile = { id: "redwood-draft", name: "Redwood Draft", version: "0.1.0", status: "engineering-hypothesis-not-professionally-approved", arithmeticToleranceCents: 1n, ageingBasis: "service_date", recoveryMethod: "age_bucket_rates", recoveryRates: { "0-30": 0.8, "121+": 0.1 } };
+const files = [
+  { name: "claims.csv", type: "claims" as const, content: "claim_id,service_date,billed,allowed,provider,service_line\nC1,2026-06-01,100.00,75.00,Dr A,Office\nC2,2026-06-02,50.00,40.00,Dr B,Lab" },
+  { name: "payments.csv", type: "payments" as const, content: "payment_id,claim_id,payment_date,amount,payer\nP1,C1,2026-06-10,60.00,Medicare\nP2,,2026-06-11,($5.00),Refund" },
+  { name: "ar.csv", type: "ar_snapshot" as const, content: "receivable_id,snapshot_date,balance,age_bucket\nC1,2026-06-30,15.00,0-30\nC2,2026-06-30,20.00,121+" },
+  { name: "gl.csv", type: "general_ledger" as const, content: "period,cash,ar\n2026-06,50.00,40.00" }
+];
+test("money preserves blanks and parenthesized negatives", () => { assert.equal(parseMoney(""), undefined); assert.equal(parseMoney("($321.45)"), -32145n); assert.throws(() => parseMoney("not money")); });
+test("ingestion preserves differences rather than forcing controls", () => { const deal = ingestCsvSources("ENG001", files); const { reconciliations, findings } = reconcile(deal, method); assert.equal(deal.quarantined.length, 0); assert.equal(reconciliations.find((x) => x.id === "all-cash-to-gl")?.difference, 500n); assert.ok(findings.some((f) => f.id === "finding:unmatched-cash")); });
+test("recovery changes expected cash but not observed cash", () => { const deal = ingestCsvSources("ENG001", files); const low = analyze(deal, method); const high = analyze(deal, { ...method, recoveryRates: { "0-30": 0.9, "121+": 0.9 } }); assert.equal(low.observedCash, high.observedCash); assert.notEqual(low.expectedRemainingCash, high.expectedRemainingCash); });
+test("compiler creates formula-driven xlsx with traceability", async () => { const deal = ingestCsvSources("ENG001", files); const analysis = analyze(deal, method); const { reconciliations, findings } = reconcile(deal, method); const output = await compileWorkbook({ deal, analysis, reconciliations, findings, methodId: method.id, methodVersion: method.version, runId: "run-1" }); const workbook = new ExcelJS.Workbook(); await workbook.xlsx.load(output); assert.ok(workbook.getWorksheet("Executive Summary")); assert.ok(workbook.getWorksheet("Source Trace")); assert.equal(workbook.getWorksheet("Executive Summary")?.getCell("B11").formula, "B8+B10"); assert.equal(workbook.getWorksheet("Reconciliation")?.getCell("D2").formula, "B2-C2"); });
+test("XLSX adapter preserves worksheet strings for canonical ingestion", async () => { const workbook = new ExcelJS.Workbook(); const sheet = workbook.addWorksheet("AR"); sheet.addRows([["receivable_id", "snapshot_date", "balance"], ["A1", "2026-06-30", "($12.34)"]]); const source = await xlsxToSourceFile({ name: "ar.xlsx", type: "ar_snapshot", content: Buffer.from(await workbook.xlsx.writeBuffer()), worksheet: "AR" }); const deal = ingestCsvSources("ENG001", [source]); assert.equal(deal.receivables[0].balance, -1234n); });

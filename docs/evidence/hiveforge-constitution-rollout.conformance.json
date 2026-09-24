@@ -1,0 +1,104 @@
+{
+  "policyVersion": "hiveforge.intent-reality.v1",
+  "work": {
+    "id": "hiveforge-constitution-rollout",
+    "title": "Install the intent-reality coding constitution and conformance foundation",
+    "scope": "substantial",
+    "authority": [
+      "Direct user instruction: implement the governing philosophy across workspaces and builds"
+    ]
+  },
+  "intent": {
+    "productGoal": "Make HiveForge work guided by a durable intent-to-reality constitution rather than isolated coding conventions.",
+    "capability": "Every future session loads the cross-workspace policy, while this repository records project application rules and structured conformance evidence.",
+    "architecturalIntent": [
+      "Global policy is loaded through the harness-supported user-global AGENTS.md mechanism.",
+      "Workspace policy refines the global policy without weakening it.",
+      "Substantial work has a machine-readable record for intent, observed execution, conformance, divergences, and learning."
+    ],
+    "invariants": [
+      "Redwood must surface unreconciled differences and never silently force financial populations to balance.",
+      "Observed runtime behaviour must not silently rewrite goals, authority boundaries, security boundaries, or critical invariants."
+    ],
+    "acceptanceEvidence": [
+      "Harness session injection confirms ~/.dsh/AGENTS.md was loaded.",
+      "Repository AGENTS.md is loaded for the Project Redwood workspace.",
+      "The JSON Schema parses and the rollout conformance record validates against its required contract."
+    ]
+  },
+  "execution": {
+    "decisions": [
+      {
+        "decision": "Use the documented user-global AGENTS.md seam for immediate cross-workspace policy distribution.",
+        "rationale": "The installed dsh-agent-instructions package loads this file at the first eligible session step for every workspace."
+      },
+      {
+        "decision": "Keep the canonical charter, concise workspace rules, schema, template, divergence register, and ADR location in version control.",
+        "rationale": "Durable, inspectable repository artifacts preserve architectural memory and make conformance review reproducible."
+      }
+    ],
+    "observedBehaviour": [
+      "The running HiveForge session emitted an additional-instructions event for ~/.dsh/AGENTS.md after it was created.",
+      "The current workspace emitted its root AGENTS.md instructions after creation.",
+      "The installed instruction loader documentation specifies that ~/.dsh/AGENTS.md is the user-global instruction source."
+    ],
+    "evidence": [
+      {
+        "kind": "runtime-instruction-injection",
+        "reference": "Current HiveForge session system-reminder after global AGENTS.md creation",
+        "result": "The constitution was injected for the running session."
+      },
+      {
+        "kind": "repository-artifact",
+        "reference": "AGENTS.md and docs/constitution/",
+        "result": "Repository-level constitutional and conformance artifacts were created."
+      },
+      {
+        "kind": "configuration",
+        "reference": "~/.dsh/profiles/web/package.json and dsh --profile web --dump-config",
+        "result": "The local constitutional bundle is registered in the Web profile and composes the hiveforge-constitution host row."
+      },
+      {
+        "kind": "plugin-contract-test",
+        "reference": "pnpm test in ~/.dsh/plugins/hiveforge-constitution",
+        "result": "The bundle registers the hiveforge:constitution system-prompt section at order -90 with the required policy identifier and operating loop."
+      },
+      {
+        "kind": "runtime-process-inspection",
+        "reference": "Get-CimInstance Win32_Process filtered for dsh/HiveForge on 2026-09-24",
+        "result": "The active dsh web process was created on 2026-09-15, before constitutional profile installation; a host restart is required for activation."
+      },
+      {
+        "kind": "validation",
+        "reference": "node scripts/validate-conformance.mjs docs/evidence/hiveforge-constitution-rollout.conformance.json",
+        "result": "The rollout record validated against the dependency-free conformance contract."
+      }
+    ]
+  },
+  "conformance": {
+    "status": "incomplete",
+    "divergences": [
+      {
+        "expected": "The constitution is active as a non-shadowed system-prompt section in the running web host and observed in a newly started session.",
+        "observed": "The Web profile now composes the local constitutional bundle, but the active dsh web process began on 2026-09-15 while the policy was installed on 2026-09-24. It cannot load the new profile until the existing host restarts and a fresh session produces runtime prompt evidence.",
+        "classification": "environment",
+        "status": "open"
+      }
+    ]
+  },
+  "learning": {
+    "recurringPattern": "A prompt-only policy has no enforceable conformance gate and can be displaced by higher-priority prompt layers.",
+    "improvementProposal": "Add a versioned harness-owned constitutional policy provider at the developer-policy layer and emit structured intent/execution/conformance events from the agent lifecycle.",
+    "durableKnowledge": [
+      "docs/constitution/HIVEFORGE_CODING_PHILOSOPHY.md",
+      "docs/constitution/conformance-record.schema.json",
+      "docs/operations/known-divergences/README.md"
+    ]
+  },
+  "completion": {
+    "capabilitySatisfied": false,
+    "invariantsPreserved": true,
+    "evidenceSufficient": true,
+    "reviewRequired": true
+  }
+}

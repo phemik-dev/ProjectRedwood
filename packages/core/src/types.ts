@@ -1,0 +1,18 @@
+export type Cents = bigint;
+export type SourceType = "claims" | "payments" | "ar_snapshot" | "general_ledger";
+export type CashEventType = "payer_payment" | "patient_payment" | "refund" | "recoupment" | "reversal" | "replacement_payment" | "transfer" | "unapplied_cash" | "secondary_payer_payment";
+export type AdjustmentType = "contractual_adjustment" | "write_off" | "bad_debt" | "denial" | "administrative_adjustment" | "correction" | "charity" | "price_concession" | "other";
+export type Gate = "G0" | "G1" | "G2" | "G3" | "G4" | "G5" | "G6" | "G7";
+
+export interface LineageRecord { sourceFileHash: string; sourceFileName: string; sourceRowId: string; raw: Record<string, string>; }
+export interface Claim { id: string; version: number; serviceDate?: string; submissionDate?: string; payer?: string; provider?: string; location?: string; serviceLine?: string; grossCharge?: Cents; allowedAmount?: Cents; reportedRevenue?: Cents; lineage: LineageRecord; }
+export interface CashEvent { id: string; claimId?: string; type: CashEventType; amount: Cents; paymentDate?: string; payer?: string; lineage: LineageRecord; }
+export interface Receivable { id: string; claimId?: string; snapshotDate: string; balance: Cents; ageBasis: "service_date" | "billing_date" | "claim_submission_date"; ageDays?: number; ageBucket?: string; payer?: string; provider?: string; location?: string; serviceLine?: string; lineage: LineageRecord; }
+export interface GLRecord { id: string; period: string; netPatientRevenue?: Cents; cash?: Cents; matchedCash?: Cents; ar?: Cents; badDebt?: Cents; lineage: LineageRecord; }
+export interface QuarantineRecord { sourceType: SourceType; sourceRowId: string; reason: string; raw: Record<string, string>; }
+export interface MethodProfile { id: string; name: string; version: string; status: "engineering-hypothesis-not-professionally-approved" | "professionally-approved"; arithmeticToleranceCents: Cents; professionalMaterialityCents?: Cents; ageingBasis: Receivable["ageBasis"]; recoveryMethod: "global_rate" | "age_bucket_rates" | "payer_age_matrix" | "historical_cohort_curve"; recoveryRates: Record<string, number | undefined>; }
+export interface AnalysisRun { id: string; dealId: string; methodProfileId: string; methodVersion: string; createdAt: string; sourceHashes: string[]; }
+export interface Reconciliation { id: string; label: string; leftDefinition: string; rightDefinition: string; leftTotal: Cents; rightTotal: Cents; difference: Cents; percentageDifference?: number; arithmeticStatus: "matched" | "difference"; materialityStatus: "unset" | "within-materiality" | "over-materiality"; evidence: string[]; }
+export interface Finding { id: string; kind: "reconciliation" | "data_quality" | "analysis"; title: string; detail: string; status: "open" | "reviewed" | "resolved"; references: string[]; }
+export interface ReviewDecision { id: string; runId: string; methodProfileId: string; methodVersion: string; gate: Gate; decision: "approved" | "rejected" | "noted"; reviewer: string; role: string; rationale: string; evidenceReferences: string[]; timestamp: string; invalidatedAt?: string; invalidationReason?: string; }
+export interface CanonicalDeal { dealId: string; claims: Claim[]; cashEvents: CashEvent[]; receivables: Receivable[]; glRecords: GLRecord[]; quarantined: QuarantineRecord[]; }

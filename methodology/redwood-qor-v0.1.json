@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "redwood-physician-group-qor-draft-v0.1",
+  "name": "Redwood Physician Group QoR DRAFT v0.1",
+  "status": "engineering-hypothesis-not-professionally-approved",
+  "version": "0.1.0",
+  "ruleClassification": {
+    "deterministic": [
+      "Preserve blanks and negative signs during ingestion.",
+      "Quarantine invalid monetary, date, and duplicate rows.",
+      "Never create balancing entries or silently force a reconciliation.",
+      "Keep observed, estimated, and adjusted amounts distinct.",
+      "Retain source lineage for canonical records and outputs.",
+      "Bind approvals to an exact analysis run and method version.",
+      "Invalidate dependent approvals after upstream change."
+    ],
+    "professional": [
+      "materiality",
+      "recovery methodology",
+      "recovery assumptions",
+      "ageing basis",
+      "bad debt treatment",
+      "normalization policy",
+      "subsequent cash window",
+      "patient responsibility attribution"
+    ]
+  },
+  "accountingBasis": "source-reported",
+  "sourceExpectations": ["claims", "payments", "ar_snapshot", "general_ledger"],
+  "ageing": {
+    "basis": "service_date",
+    "buckets": [
+      { "label": "0-30", "minDays": 0, "maxDays": 30 },
+      { "label": "31-60", "minDays": 31, "maxDays": 60 },
+      { "label": "61-90", "minDays": 61, "maxDays": 90 },
+      { "label": "91-120", "minDays": 91, "maxDays": 120 },
+      { "label": "121+", "minDays": 121, "maxDays": null }
+    ]
+  },
+  "reconciliation": {
+    "arithmeticToleranceCents": 1,
+    "professionalMateriality": null,
+    "required": ["claims_to_source_control", "payments_to_remittance_control", "all_cash_to_gl_cash", "matched_cash_to_gl_cash", "ar_snapshot_to_gl_ar"]
+  },
+  "recovery": {
+    "primaryMethod": "age_bucket_rates",
+    "rates": { "0-30": null, "31-60": null, "61-90": null, "91-120": null, "121+": null },
+    "approvalRequired": true
+  },
+  "releaseRequirements": ["G0", "G1", "G2", "G3", "G4", "G5", "G6", "G7"]
+}
