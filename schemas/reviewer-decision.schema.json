@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://redwood.local/schema/reviewer-decision.v0.1.json",
+  "title": "Redwood Reviewer Decision",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "decision_id",
+    "deal_id",
+    "method_id",
+    "method_version",
+    "run_id",
+    "gate_id",
+    "decision",
+    "reviewer",
+    "timestamp",
+    "rationale",
+    "evidence_refs"
+  ],
+  "properties": {
+    "decision_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "deal_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "method_id": {
+      "const": "redwood.physician_group.qor"
+    },
+    "method_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "gate_id": {
+      "enum": [
+        "G0",
+        "G1",
+        "G2",
+        "G3",
+        "G4",
+        "G5",
+        "G6",
+        "G7"
+      ]
+    },
+    "decision": {
+      "enum": [
+        "approve",
+        "reject",
+        "override",
+        "defer"
+      ]
+    },
+    "reviewer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "role"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "role": {
+          "type": "string",
+          "minLength": 1
+        },
+        "organization": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rationale": {
+      "type": "string",
+      "minLength": 1
+    },
+    "evidence_refs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "supersedes_decision_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "invalidated_by_run_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  }
+}
