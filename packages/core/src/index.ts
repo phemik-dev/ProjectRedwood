@@ -10,3 +10,4 @@ export * from "./workbook.js";
 export * from "./xlsx.js";
 export * from "./mapping.js";
 export * from "./gates.js";
+export * from "./gold-validation.js";

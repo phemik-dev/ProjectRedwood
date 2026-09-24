@@ -6,6 +6,7 @@ import type { AdjustmentEvent, CanonicalDeal, CashEvent, Claim, GLRecord, Lineag
 export interface SourceFile { name: string; type: SourceType; content: string; }
 const field = (row: CsvRow, names: string[]) => names.map((name) => row[name]).find((value) => value !== undefined);
 const validDate = (value: string | undefined) => !value || /^\d{4}-\d{2}-\d{2}$/.test(value) || /^\d{4}-\d{2}$/.test(value);
+const forbiddenPhiHeaders = new Set(["patient_name", "patient name", "first_name", "last_name", "ssn", "social_security_number", "street_address", "address", "clinical_note", "clinical narrative"]);
 function lineage(file: SourceFile, hash: string, index: number, raw: CsvRow): LineageRecord { return { sourceFileHash: hash, sourceFileName: file.name, sourceRowId: stableRowId(hash, index + 2), raw }; }
 function unique<T extends { id: string }>(items: T[], item: T, type: SourceType, quarantine: QuarantineRecord): void { if (items.some((candidate) => candidate.id === item.id)) throw Object.assign(new Error("duplicate"), { quarantine }); items.push(item); }
 
@@ -18,6 +19,7 @@ export function ingestCsvSources(dealId: string, files: SourceFile[]): Canonical
     seenHashes.add(hash);
     let rows: CsvRow[];
     try { rows = parseCsv(file.content); } catch (error) { deal.quarantined.push({ sourceType: file.type, sourceRowId: `${hash}:file`, reason: error instanceof Error ? error.message : "Invalid CSV", raw: {} }); continue; }
+    const headers = rows[0] ? Object.keys(rows[0]).map((header) => header.trim().toLowerCase()) : []; const forbidden = headers.filter((header) => forbiddenPhiHeaders.has(header)); if (forbidden.length) { deal.quarantined.push({ sourceType: file.type, sourceRowId: `${hash}:file`, reason: `PHI-exclusion policy blocked headers: ${forbidden.join(", ")}`, raw: {} }); continue; }
     rows.forEach((raw, index) => {
       const sourceRowId = stableRowId(hash, index + 2); const base = lineage(file, hash, index, raw);
       try {
