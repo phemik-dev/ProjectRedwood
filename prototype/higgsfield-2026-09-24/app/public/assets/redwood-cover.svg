@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 1000" role="img" aria-labelledby="title desc">
+<title>Redwood healthcare transaction intelligence</title>
+<desc>Abstract source records flowing through review gates into a transaction-ready workbook.</desc>
+<rect width="1500" height="1000" fill="#F5F7F4"/>
+<g fill="none" stroke="#D7DEDC" stroke-width="3">
+<path d="M120 220H430"/><path d="M120 360H430"/><path d="M120 500H430"/><path d="M120 640H430"/>
+<path d="M430 220C560 220 530 400 700 400"/><path d="M430 360C570 360 560 450 700 450"/>
+<path d="M430 500C570 500 560 500 700 500"/><path d="M430 640C570 640 540 550 700 550"/><path d="M850 475H1120"/>
+</g>
+<g fill="#FFFFFF" stroke="#102B36" stroke-width="3">
+<rect x="110" y="180" width="320" height="80" rx="14"/><rect x="110" y="320" width="320" height="80" rx="14"/>
+<rect x="110" y="460" width="320" height="80" rx="14"/><rect x="110" y="600" width="320" height="80" rx="14"/>
+<rect x="700" y="345" width="150" height="260" rx="22"/><rect x="1120" y="330" width="260" height="300" rx="22"/>
+</g>
+<g fill="#102B36">
+<circle cx="150" cy="220" r="12"/><circle cx="150" cy="360" r="12"/><circle cx="150" cy="500" r="12"/><circle cx="150" cy="640" r="12"/>
+<rect x="745" y="405" width="60" height="14" rx="7"/><rect x="745" y="455" width="60" height="14" rx="7"/>
+<rect x="745" y="505" width="60" height="14" rx="7"/><rect x="745" y="555" width="60" height="14" rx="7"/>
+<rect x="1175" y="390" width="150" height="14" rx="7"/><rect x="1175" y="435" width="115" height="14" rx="7"/>
+<rect x="1175" y="510" width="150" height="14" rx="7"/><rect x="1175" y="555" width="88" height="14" rx="7"/>
+</g>
+<g fill="#2F746F"><circle cx="775" cy="375" r="13"/><circle cx="775" cy="525" r="13"/><rect x="1160" y="590" width="170" height="10" rx="5"/></g>
+<circle cx="785" cy="475" r="20" fill="#A74A4A"/>
+<path d="M785 463v15m0 10h.01" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
+<text x="110" y="850" fill="#102B36" font-family="Arial, sans-serif" font-size="78" font-weight="700">Redwood</text>
+<text x="112" y="905" fill="#60727A" font-family="Arial, sans-serif" font-size="30">Healthcare transaction intelligence</text>
+</svg>
