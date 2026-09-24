@@ -16,7 +16,7 @@ The current state demonstrates the governing invariant: it surfaces rather than 
 - **Method kernel:** draft, versioned engineering-hypothesis Method Profile in `methodology/redwood-qor-v0.1.json`; deterministic versus professional-rule distinction; ADR-001.
 - **Canonical model:** claims with versions, typed cash events, typed adjustment events, explicit A/R snapshots, GL records, source-row lineage, review decisions, mappings, and gates in `packages/core/src/`.
 - **Ingestion:** CSV plus selected XLSX worksheet adapter; source hashes, stable row identifiers, blank/sign preservation, duplicate-file/record quarantine, and direct-PHI header exclusion.
-- **Reconciliation and analytics:** integer-cent (`bigint`) arithmetic, all-cash/GL, matched-cash/GL, A/R/GL controls, realization measures, recovery estimates, and payer/provider/location/service-line concentrations.
+- **Reconciliation and analytics:** integer-cent (`bigint`) arithmetic, exact rational recovery-rate application (no IEEE floating money calculation), all-cash/GL, matched-cash/GL, A/R/GL controls, realization measures, recovery estimates, and payer/provider/location/service-line concentrations.
 - **Review:** run-bound mapping approvals and G0–G7 status; draft export is separated from client-release authorization; review decisions carry reviewer/rationale/timestamp.
 - **Persistence:** local immutable run artifact store that survives a local-server restart. Runtime records are intentionally excluded from Git.
 - **Excel compiler:** formula-bearing XLSX with Executive Summary, QoR Waterfall, Cash Collections, AR Aging, Payer, Location, Provider, Service Line, Collection Curves, Assumptions, Reconciliation, Findings, and Source Trace.
@@ -43,7 +43,7 @@ The last full verification run passed:
 ```text
 pnpm build
 pnpm typecheck
-pnpm test     # 11/11 passed
+pnpm test     # 12/12 passed
 pnpm demo
 pnpm heldout  # post-implementation synthetic proof pack
 node scripts/validate-conformance.mjs docs/evidence/redwood-qor-mvp-v0.1.conformance.json
