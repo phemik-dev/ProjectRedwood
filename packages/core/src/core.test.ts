@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import ExcelJS from "exceljs";
 import { readFile } from "node:fs/promises";
-import { analyze, compareGoldDealMetrics, compileWorkbook, evaluateGates, ingestCsvSources, parseMoney, reconcile, xlsxToSourceFile, type MethodProfile } from "./index.js";
+import { analyze, compareGoldDealMetrics, compileWorkbook, createDecision, evaluateGates, ingestCsvSources, invalidateDecision, isActiveDecision, parseMoney, reconcile, xlsxToSourceFile, type MethodProfile } from "./index.js";
 
 const method: MethodProfile = { id: "redwood-draft", name: "Redwood Draft", version: "0.1.0", status: "engineering-hypothesis-not-professionally-approved", arithmeticToleranceCents: 1n, ageingBasis: "service_date", recoveryMethod: "age_bucket_rates", recoveryRates: { "0-30": 0.8, "121+": 0.1 } };
 const files = [
@@ -21,3 +21,4 @@ test("ENG002 keeps variants and does not silently aggregate A/R snapshots", asyn
 test("release gates block unresolved reconciliation even when a workbook is available", () => { const deal = ingestCsvSources("ENG001", files); const { reconciliations, findings } = reconcile(deal, method); const gates = evaluateGates({ deal, mappings: [], reconciliations, findings, decisions: [] }); assert.equal(gates.find((gate) => gate.gate === "G3")?.status, "blocked"); assert.equal(gates.find((gate) => gate.gate === "G7")?.status, "blocked"); });
 test("PHI-exclusion policy quarantines disallowed direct identifiers", () => { const deal = ingestCsvSources("ENG-PHI", [{ name: "claims.csv", type: "claims", content: "claim_id,patient_name,billed\nC1,Jane Doe,100.00" }]); assert.equal(deal.claims.length, 0); assert.match(deal.quarantined[0].reason, /PHI-exclusion policy/); });
 test("Gold Deal validation matrix preserves unavailable values and differences", () => { const matrix = compareGoldDealMetrics([{ metric: "Observed cash", professionalValue: 10000n, redwoodValue: 9900n, reviewStatus: "open" }, { metric: "QoR adjustment", professionalValue: 500n, reviewStatus: "open" }]); assert.equal(matrix[0].difference, -100n); assert.equal(matrix[1].difference, undefined); });
+test("an upstream change invalidates a run-bound professional decision", () => { const decision = createDecision({ runId: "run-1", methodProfileId: method.id, methodVersion: method.version, gate: "G5", decision: "approved", reviewer: "Advisor", role: "Partner", rationale: "Reviewed recovery basis.", evidenceReferences: [] }); assert.ok(isActiveDecision(decision, "run-1", method.version)); const invalidated = invalidateDecision(decision, "Recovery assumption changed"); assert.equal(isActiveDecision(invalidated, "run-1", method.version), false); assert.match(invalidated.invalidationReason ?? "", /changed/); });
