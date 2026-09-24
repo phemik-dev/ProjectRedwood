@@ -1,0 +1,239 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "method_id": "redwood.physician_group.qor",
+  "method_version": "0.1.0",
+  "status": "engineering_baseline",
+  "effective_date": "2026-09-24",
+  "vertical": "physician_group",
+  "jurisdiction": "US",
+  "currency": "USD",
+  "purpose": "Transaction diligence quality-of-revenue analysis. This method evaluates source-reported revenue quality and collectibility; it does not independently opine on GAAP revenue recognition.",
+  "governing_question": "What portion of reported healthcare revenue is actually realized, reasonably collectible, recurring and supportable?",
+  "accounting_basis": {
+    "financial_statement_basis": "source_reported",
+    "analysis_basis": "service_date_cohort_plus_cash_realization_plus_snapshot_ar",
+    "gaap_restatement_in_scope": false,
+    "professional_approval": {
+      "status": "pending",
+      "required_for_client_release": true
+    },
+    "rules": {
+      "gross_charge": "Source-recorded billed charge before contractual adjustment.",
+      "allowed_amount": "Source-recorded payer/contract allowed amount when available. Never infer allowed amount from charge amount without an approved rule.",
+      "observed_collections": "Verified cash events allocated to in-scope claims with payment_date on or before valuation_date.",
+      "open_ar": "Source open receivable balance at the approved snapshot date before Redwood recovery haircuts.",
+      "expected_remaining_cash": "Eligible open A/R multiplied by the approved recovery policy. It is estimated, never observed.",
+      "estimated_realizable_revenue": "Observed collections + expected remaining cash +/- approved QoR adjustments.",
+      "states_must_remain_separate": [
+        "observed",
+        "estimated",
+        "adjusted"
+      ]
+    }
+  },
+  "cutoff_policy": {
+    "valuation_date_required": true,
+    "service_date_after_valuation_date": "exclude_and_flag",
+    "cash_on_or_before_valuation_date": "observed_cash",
+    "cash_after_valuation_date": "subsequent_cash_evidence",
+    "subsequent_cash_in_observed_collections": false,
+    "ar_snapshot_must_be_on_or_before_valuation_date": true,
+    "mixed_snapshot_aggregation": "prohibited"
+  },
+  "event_policy": {
+    "contractual_adjustment": {
+      "kind": "non_cash",
+      "sign": "negative",
+      "may_reduce_open_ar": true,
+      "must_remain_distinct_from_cash": true
+    },
+    "patient_responsibility": {
+      "kind": "claim_economic_component",
+      "cash_attribution": "attribute_to_original_claim_payer_cohort_for_segmentation",
+      "remitter_may_be_patient": true
+    },
+    "refund": {
+      "kind": "cash",
+      "sign": "negative",
+      "must_remain_distinct_from_adjustment": true
+    },
+    "recoupment": {
+      "kind": "cash",
+      "sign": "negative",
+      "must_remain_distinct_from_adjustment": true
+    },
+    "writeoff": {
+      "kind": "non_cash",
+      "sign": "negative",
+      "may_reduce_open_ar_if_posted": true,
+      "must_remain_distinct": true
+    },
+    "bad_debt": {
+      "kind": "non_cash",
+      "sign": "negative",
+      "gl_treatment": "report_separately_until_reviewer_policy_approved"
+    },
+    "unmatched_cash": {
+      "allocation": "none_without_evidence",
+      "status": "finding",
+      "included_in_matched_cash": false
+    },
+    "transfer": {
+      "kind": "cash_reclassification",
+      "net_revenue_effect": "zero_when_fully_paired"
+    }
+  },
+  "ar_policy": {
+    "gross_ar": "Source open receivable before recovery haircut.",
+    "net_recoverable_ar": "Expected remaining cash after approved recovery factors; never relabel gross A/R as net without showing the recovery transformation.",
+    "age_basis": "valuation_date_minus_service_date_days",
+    "buckets": [
+      {
+        "id": "0_30",
+        "min_days": 0,
+        "max_days": 30
+      },
+      {
+        "id": "31_60",
+        "min_days": 31,
+        "max_days": 60
+      },
+      {
+        "id": "61_90",
+        "min_days": 61,
+        "max_days": 90
+      },
+      {
+        "id": "91_120",
+        "min_days": 91,
+        "max_days": 120
+      },
+      {
+        "id": "120_plus",
+        "min_days": 121,
+        "max_days": null
+      }
+    ]
+  },
+  "recovery_policy": {
+    "active_method": "reviewer_selected",
+    "allowed_methods": [
+      "global_rate",
+      "age_bucket_rates",
+      "payer_age_matrix",
+      "cohort_curve"
+    ],
+    "only_one_primary_method_per_run": true,
+    "default_rates": null,
+    "approval_required": true,
+    "right_censoring_required_for_empirical_cohort_curves": true,
+    "scenario_changes_invalidate_approval": true
+  },
+  "reconciliation_policy": {
+    "arithmetic_tolerance_cents": 1,
+    "professional_materiality": {
+      "amount_cents": null,
+      "percentage": null,
+      "status": "pending_reviewer"
+    },
+    "auto_force_balance": false,
+    "all_unreconciled_differences_create_findings": true,
+    "required_bridges": [
+      "cash_to_gl_all_cash",
+      "cash_to_gl_matched_cash",
+      "ar_to_gl",
+      "claims_to_source_control_when_available"
+    ]
+  },
+  "ingestion_semantics": {
+    "money_storage": "integer_cents_or_decimal_exact",
+    "blank_money": "unknown_not_zero",
+    "invalid_money": "error_or_quarantine",
+    "parentheses": "negative",
+    "duplicate_rows": "quarantine_and_review",
+    "duplicate_files": "idempotent_by_hash",
+    "date_storage": "ISO-8601_date",
+    "silent_transformation": "prohibited",
+    "source_lineage_required": true
+  },
+  "review_gates": [
+    {
+      "id": "G0",
+      "name": "Scope",
+      "pass_when": "valuation date, analysis period, entities, currency and purpose are approved"
+    },
+    {
+      "id": "G1",
+      "name": "Source Sufficiency",
+      "pass_when": "minimum required source populations are present or exclusions are explicitly approved"
+    },
+    {
+      "id": "G2",
+      "name": "Mapping",
+      "pass_when": "canonical mappings are reviewed; unresolved required mappings block release"
+    },
+    {
+      "id": "G3",
+      "name": "Reconciliation",
+      "pass_when": "required bridges are computed and every difference is dispositioned; unresolved differences remain visible"
+    },
+    {
+      "id": "G4",
+      "name": "Calculation",
+      "pass_when": "required analyses reproduce deterministically for the exact method and data run"
+    },
+    {
+      "id": "G5",
+      "name": "Judgment",
+      "pass_when": "recovery policy, assumptions and QoR adjustments are approved by a named reviewer"
+    },
+    {
+      "id": "G6",
+      "name": "Finding Review",
+      "pass_when": "all material and blocking findings have an explicit disposition"
+    },
+    {
+      "id": "G7",
+      "name": "Release",
+      "pass_when": "named reviewer authorizes the exact run/method/output; any upstream change invalidates release"
+    }
+  ],
+  "release_policy": {
+    "draft_export_allowed_with_warnings": true,
+    "client_release_requires_all_gates": true,
+    "named_reviewer_required": true,
+    "rationale_required": true,
+    "method_version_bound": true,
+    "run_id_bound": true,
+    "changes_invalidate_release": true
+  },
+  "known_eng001_findings": [
+    {
+      "id": "ENG001-CASH-GL-ALL",
+      "difference_cents": 75000,
+      "status": "open",
+      "description": "All June cash versus GL differs by $750.00."
+    },
+    {
+      "id": "ENG001-CASH-GL-MATCHED",
+      "difference_cents": 107145,
+      "status": "open",
+      "description": "Matched June cash versus GL differs by $1,071.45."
+    },
+    {
+      "id": "ENG001-AR-GL",
+      "difference_cents": 140501,
+      "status": "open",
+      "description": "A/R-to-GL differs by $1,405.01; do not force balance."
+    }
+  ],
+  "deferred_to_later_milestones": [
+    "generalized CSV/XLSX ingestion",
+    "payer alias engine",
+    "calculation engine",
+    "interactive workbench",
+    "xlsx compiler",
+    "production HIPAA/security controls",
+    "specialty packs beyond physician groups"
+  ]
+}
