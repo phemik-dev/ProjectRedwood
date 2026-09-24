@@ -45,6 +45,7 @@ pnpm build
 pnpm typecheck
 pnpm test     # 11/11 passed
 pnpm demo
+pnpm heldout  # post-implementation synthetic proof pack
 node scripts/validate-conformance.mjs docs/evidence/redwood-qor-mvp-v0.1.conformance.json
 ```
 
@@ -64,6 +65,7 @@ Key local integration observations are recorded in `docs/evidence/redwood-qor-mv
 - Sample workbook: `artifacts/ENG001-redwood-draft.xlsx`
 - ENG001 fixture: `fixtures/eng001/`
 - ENG002 structural-variation fixture: `fixtures/eng002/`
+- Post-implementation proof workbook: `artifacts/held-out-demonstration.xlsx` and `artifacts/held-out-demonstration.json`
 - Conformance record: `docs/evidence/redwood-qor-mvp-v0.1.conformance.json`
 - Gold Deal comparison lane: `docs/GOLD_DEAL_VALIDATION.md`
 
@@ -74,7 +76,7 @@ Key local integration observations are recorded in `docs/evidence/redwood-qor-mv
 3. Mapping inference supports configured exact aliases; broader schema inference, preamble/footer detection, and a full mapping-rule editor are incomplete.
 4. Reconciliation scope currently covers core cash and A/R controls; claims-source totals, allocation controls, trend/volume-rate decomposition, and additional operational controls need extension.
 5. ExcelJS writes formulas but does not calculate them. Structural formula checks run in tests; independent Excel/LibreOffice recalculation is still required for release assurance.
-6. ENG002 is synthetic variation, not a held-out independently maintained acceptance pack. No genuine held-out fixture or Gold Deal data has been used.
+6. A post-implementation synthetic proof pack generated `artifacts/held-out-demonstration.xlsx` from a fresh source set, but it is not independently maintained/controlled and therefore is not equivalent to a genuine held-out acceptance pack. No Gold Deal data has been used.
 7. Findings cannot yet be fully dispositioned through a dedicated workflow; therefore a release-pass path is intentionally not demonstrated.
 8. The direct-PHI header exclusion is an MVP input control only; production privacy/security architecture remains out of scope.
 

@@ -1,0 +1,18 @@
+{
+  "dealId": "HELDOUT-POST-IMPLEMENTATION",
+  "sourceFiles": [
+    "source_claims.csv",
+    "source_payments.csv",
+    "source_ar.csv",
+    "source_gl.csv"
+  ],
+  "counts": {
+    "claims": 2,
+    "cashEvents": 3,
+    "receivables": 2,
+    "quarantined": 0
+  },
+  "reconciliationCount": 3,
+  "openFindingCount": 2,
+  "workbook": "artifacts/held-out-demonstration.xlsx"
+}

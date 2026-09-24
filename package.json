@@ -7,7 +7,8 @@
     "build": "pnpm --filter @redwood/core build && pnpm --filter @redwood/workbench build",
     "test": "pnpm --filter @redwood/core test",
     "typecheck": "pnpm --filter @redwood/core typecheck && pnpm --filter @redwood/workbench typecheck",
-    "demo": "pnpm --filter @redwood/core demo"
+    "demo": "pnpm --filter @redwood/core demo",
+    "heldout": "pnpm --filter @redwood/core heldout"
   },
   "devDependencies": {
     "typescript": "^5.9.3"
