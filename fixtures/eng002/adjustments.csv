@@ -1,0 +1,4 @@
+Adjustment_ID,Claim_ID,adjustment_type,Posting_Date,Amt,Payer
+E2-A001,E2-C001,contractual_adjustment,2026-02-01,($15.00),Medicare
+E2-A002,E2-C002,write_off,2026-04-01,($30.00),BCBS TX
+E2-A003,E2-C003,denial,2026-04-02,($50.00),Self Pay

@@ -1,0 +1,8 @@
+Payment_ID,Claim_ID,Payment_Date,Amt Paid,Payer,cash_event_type
+E2-P001,E2-C001,2026-02-01,150.00,Medicare,payer_payment
+E2-P002,E2-C002,2026-03-01,180.00,BCBS TX,payer_payment
+E2-P003,E2-C003,2026-04-01,20.00,Patient,patient_payment
+E2-P004,E2-C002,2026-04-02,15.00,Secondary Plan,secondary_payer_payment
+E2-P005,E2-C001,2026-04-15,($25.00),Medicare,recoupment
+E2-P006,E2-C003,2026-04-20,($5.00),Patient,refund
+E2-P007,,2026-04-25,12.00,Unapplied,unapplied_cash

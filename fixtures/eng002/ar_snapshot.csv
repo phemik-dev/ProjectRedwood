@@ -1,0 +1,5 @@
+receivable_id,claim_id,snapshot_date,balance,age_bucket,age_days,age_basis,payer,provider,location,service_line
+E2-C001,E2-C001,2026-03-31,15.00,61-90,86,service_date,Medicare,PRV-A,LOC-N,Primary Care
+E2-C002,E2-C002,2026-03-31,30.00,31-60,44,service_date,BCBS TX,PRV-B,LOC-S,Imaging
+E2-C002,E2-C002,2026-04-30,15.00,61-90,74,service_date,BCBS TX,PRV-B,LOC-S,Imaging
+E2-C003,E2-C003,2026-04-30,50.00,31-60,41,service_date,Self Pay,PRV-C,LOC-S,Lab
