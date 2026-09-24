@@ -1,0 +1,11 @@
+{
+  "name": "@redwood/workbench",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "typecheck": "node --check server.mjs && node --check public/app.js",
+    "start": "node server.mjs"
+  }
+}
