@@ -94,6 +94,9 @@ Key local integration observations are recorded in `docs/evidence/redwood-qor-mv
 - `66ca057` — mapping decisions
 - `c40a9ff` — review-gate enforcement
 - `095b357` — PHI exclusion and Gold validation lane
+- `a555c4e` — approval-invalidation assurance and initial build report
+- `73c8a22` — post-implementation synthetic proof pack
+- `1080ebb` — exact rational recovery-cent arithmetic
 
 ## Recommended next action
 
