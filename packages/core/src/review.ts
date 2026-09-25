@@ -1,7 +1,8 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { ReviewDecision } from "./types.js";
-
-export function dependencyFingerprint(input: { runId: string; methodVersion: string; sourceHashes: string[]; mappingHash: string; engineVersion: string }): string { return createHash("sha256").update(JSON.stringify({ ...input, sourceHashes: [...input.sourceHashes].sort() })).digest("hex"); }
+export interface ApprovalDependencies { runId: string; methodVersion: string; sourceHashes: string[]; mappingHash: string; assumptionHash: string; engineVersion: string; findingHash: string; }
+export function dependencyFingerprint(input: ApprovalDependencies): string { return createHash("sha256").update(JSON.stringify({ ...input, sourceHashes: [...input.sourceHashes].sort() })).digest("hex"); }
 export function createDecision(input: Omit<ReviewDecision, "id" | "timestamp">): ReviewDecision { if (!input.reviewer || !input.rationale) throw new Error("Reviewer and rationale are required; checkbox-only approval is forbidden."); return { ...input, id: randomUUID(), timestamp: new Date().toISOString() }; }
 export function invalidateDecision(decision: ReviewDecision, reason: string): ReviewDecision { return { ...decision, invalidatedAt: new Date().toISOString(), invalidationReason: reason }; }
-export function isActiveDecision(decision: ReviewDecision, currentRunId: string, currentMethodVersion: string): boolean { return !decision.invalidatedAt && decision.runId === currentRunId && decision.methodVersion === currentMethodVersion; }
+export function isActiveDecision(decision: ReviewDecision, currentRunId: string, currentMethodVersion: string, currentFingerprint?: string): boolean { return !decision.invalidatedAt && decision.runId === currentRunId && decision.methodVersion === currentMethodVersion && (currentFingerprint === undefined || decision.dependencyFingerprint === currentFingerprint); }
+export function invalidateStaleDecisions(decisions: ReviewDecision[], currentFingerprint: string, reason: string): ReviewDecision[] { return decisions.map((decision) => !decision.invalidatedAt && decision.dependencyFingerprint !== undefined && decision.dependencyFingerprint !== currentFingerprint ? invalidateDecision(decision, reason) : decision); }
