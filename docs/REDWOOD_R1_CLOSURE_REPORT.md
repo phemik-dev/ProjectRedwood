@@ -2,14 +2,14 @@
 
 **Build 002 source:** `c7bd42a207f9c7ef625d096371ebdd82dbbe5f09`  
 **Build 003 branch:** `build/redwood-r1-closure-v0.3`  
-**Status:** closure mechanisms partially implemented; not yet ready for Assurance 001C because reviewed MappingDecision objects are not yet the sole canonicalization authority.
+**Status:** local closure candidate; MappingSet changes/rejections now produce successor runs. Remote CI execution remains pending.
 
 ## Assurance 001B closure matrix
 
 | Finding | Build 003 result | Evidence |
 | --- | --- | --- |
 | Workbench DealScope | Partially closed | Intake sends/persists scope; server runs scoped analyze/reconcile and scope contributes to fingerprint. |
-| Authoritative Mapping Layer | Substantially closed | Critical claim/payment/A/R/GL fields execute through MappingSet; successor endpoint replays retained source artifacts with MappingSet vN+1 and fresh results. |
+| Authoritative Mapping Layer | Closed locally | Critical claim/payment/A/R/GL fields execute through MappingSet; Mapping review creates successor runs from retained source artifacts; rejected mappings return unavailable values rather than stale aliases. |
 | Finding disposition | Substantially closed | First-class persisted disposition endpoint, evidence/rationale requirement, profile policy/gate support, and visible Workbench disposition form; lifecycle invalidation coverage remains incomplete. |
 | Evaluation-time approval validity | Closed for server gate evaluation | Server supplies run profile/fingerprint to gate evaluation; stale decisions are inactive under mismatch. |
 | Workbook derived ageing/payment semantics | Partially closed | Workbook binds to run profile/scope and shows source/derived ageing; Recovery Analysis uses derived buckets. |
@@ -36,17 +36,16 @@ A controlled lifecycle trace retained original source artifacts on Run A and rep
 ```text
 pnpm build
 pnpm typecheck
-pnpm test  # 19/19 passed
+pnpm test  # 20/20 passed
 pnpm --filter @redwood/core eng001-full
 ```
 
 ## Remaining divergences
 
-1. The successor MappingSet endpoint is implemented and causally rebuilds critical canonical fields, but the Mapping-screen approval/rejection UI does not yet invoke it directly.
-2. Disposition invalidation endpoint coverage remains incomplete, although the persisted endpoint and visible Workbench form are present.
-3. Build 003 CI has not yet run remotely on GitHub.
-4. Native Excel/LibreOffice formula recalculation remains unobserved.
+1. Build 003 CI has not yet run remotely on GitHub for the final frozen SHA.
+2. Native Excel/LibreOffice formula recalculation remains unobserved.
+3. Disposition invalidation endpoint coverage remains incomplete, although stale dispositions are inactive when their fingerprint no longer matches.
 
 ## Assurance 001C readiness
 
-**Not ready.** The core scoped runtime, fingerprint behavior, payment mapping, and derived workbook ageing have progressed, but the two incomplete closure mechanisms above must be completed before a truthful Assurance 001C candidate can be presented.
+**Ready for Assurance 001C local review, pending remote GitHub Actions verification.** The required successor-run MappingSet lifecycle is demonstrated locally; remaining items are evidence limitations rather than a bypass of the R1 core governance invariant.

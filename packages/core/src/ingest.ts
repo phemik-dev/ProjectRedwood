@@ -13,7 +13,7 @@ function lineage(file: SourceFile, hash: string, index: number, raw: CsvRow): Li
 function unique<T extends { id: string }>(items: T[], item: T, type: SourceType, quarantine: QuarantineRecord): void { if (items.some((candidate) => candidate.id === item.id)) throw Object.assign(new Error("duplicate"), { quarantine }); items.push(item); }
 
 export function ingestCsvSources(dealId: string, files: SourceFile[], mappingSet: MappingDecision[] = []): CanonicalDeal {
-  const mappedField = (raw: CsvRow, sourceType: SourceType, canonical: string, fallback: string[]) => { const decision = mappingSet.find((item) => item.sourceType === sourceType && item.canonicalField === canonical && item.reviewStatus !== "rejected"); return decision ? raw[decision.sourceField] : field(raw, fallback); };
+  const mappedField = (raw: CsvRow, sourceType: SourceType, canonical: string, fallback: string[]) => { const decision = mappingSet.find((item) => item.sourceType === sourceType && item.canonicalField === canonical); if (decision) return decision.reviewStatus === "rejected" ? undefined : raw[decision.sourceField]; return field(raw, fallback); };
   const deal: CanonicalDeal = { dealId, claims: [], cashEvents: [], adjustmentEvents: [], receivables: [], glRecords: [], quarantined: [] };
   const seenHashes = new Set<string>();
   for (const file of files) {
