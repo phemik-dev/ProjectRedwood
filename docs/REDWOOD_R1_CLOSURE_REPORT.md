@@ -26,7 +26,7 @@
 ```text
 pnpm build
 pnpm typecheck
-pnpm test  # 18/18 passed
+pnpm test  # 19/19 passed
 pnpm --filter @redwood/core eng001-full
 ```
 
