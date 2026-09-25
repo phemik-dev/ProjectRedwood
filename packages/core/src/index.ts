@@ -13,3 +13,4 @@ export * from "./gates.js";
 export * from "./gold-validation.js";
 export * from "./scope.js";
 export * from "./ageing.js";
+export * from "./method-profile.js";

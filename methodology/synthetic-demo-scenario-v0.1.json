@@ -1,0 +1,11 @@
+{
+  "id": "synthetic-demo-scenario-v0.1",
+  "name": "Synthetic Demo Scenario Profile",
+  "status": "synthetic-testing-only",
+  "version": "0.1.0",
+  "baseMethodProfileId": "redwood-physician-group-qor-draft-v0.1",
+  "arithmeticToleranceCents": 1,
+  "ageingBasis": "service_date",
+  "recoveryMethod": "age_bucket_rates",
+  "recoveryRates": { "0-30": 0.9, "31-60": 0.7, "61-90": 0.5, "91-120": 0.3, "121+": 0.1 }
+}

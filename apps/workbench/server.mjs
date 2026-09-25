@@ -2,11 +2,11 @@ import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { extname } from "node:path";
 import { randomUUID } from "node:crypto";
-import { analyze, compileWorkbook, createDecision, evaluateGates, inferMappings, ingestCsvSources, reconcile, xlsxToSourceFile } from "../../packages/core/dist/index.js";
+import { analyze, compileWorkbook, createDecision, evaluateGates, inferMappings, ingestCsvSources, loadMethodProfile, reconcile, xlsxToSourceFile } from "../../packages/core/dist/index.js";
 import { loadRuns, saveRun } from "./store.mjs";
 
 const runs = await loadRuns();
-const profile = { id: "redwood-physician-group-qor-draft-v0.1", name: "Redwood Physician Group QoR DRAFT v0.1", version: "0.1.0", status: "engineering-hypothesis-not-professionally-approved", arithmeticToleranceCents: 1n, ageingBasis: "service_date", recoveryMethod: "age_bucket_rates", recoveryRates: { "0-30": 0.9, "31-60": 0.7, "61-90": 0.5, "91-120": 0.3, "121+": 0.1 } };
+const profile = await loadMethodProfile(new URL("../../methodology/redwood-qor-v0.1.json", import.meta.url));
 const json = (response, status, value) => { response.writeHead(status, { "content-type": "application/json" }); response.end(JSON.stringify(value, (_, item) => typeof item === "bigint" ? item.toString() : item)); };
 const body = async (request) => { const chunks = []; for await (const chunk of request) chunks.push(chunk); return JSON.parse(Buffer.concat(chunks).toString("utf8")); };
 const mime = { ".html": "text/html; charset=utf-8", ".js": "application/javascript; charset=utf-8", ".css": "text/css; charset=utf-8" };
