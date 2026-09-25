@@ -9,7 +9,7 @@
 | Finding | Build 003 result | Evidence |
 | --- | --- | --- |
 | Workbench DealScope | Partially closed | Intake sends/persists scope; server runs scoped analyze/reconcile and scope contributes to fingerprint. |
-| Authoritative Mapping Layer | Partial | Shared canonical alias registry drives mapping inference and critical ingestion aliases; full MappingSet-driven recanonicalization is not complete. |
+| Authoritative Mapping Layer | Substantially closed | Critical claim/payment/A/R/GL fields execute through MappingSet; successor endpoint replays retained source artifacts with MappingSet vN+1 and fresh results. |
 | Finding disposition | Substantially closed | First-class persisted disposition endpoint, evidence/rationale requirement, profile policy/gate support, and visible Workbench disposition form; lifecycle invalidation coverage remains incomplete. |
 | Evaluation-time approval validity | Closed for server gate evaluation | Server supplies run profile/fingerprint to gate evaluation; stale decisions are inactive under mismatch. |
 | Workbook derived ageing/payment semantics | Partially closed | Workbook binds to run profile/scope and shows source/derived ageing; Recovery Analysis uses derived buckets. |
@@ -20,6 +20,16 @@
 - Raw sheets processed before Validation_Truth: Claims_Raw, Payments_Raw, AR_Snapshot_Raw, GL_Monthly_Raw
 - Result: all 10 Validation_Truth controls matched after the raw-sheet engine run.
 - Expected G3 reconciliation exception remained visible. No balancing entry was created.
+
+## Authoritative MappingSet → Successor Run Closure
+
+A controlled lifecycle trace retained original source artifacts on Run A and replayed them with MappingSet v2 for Run B.
+
+- Run A used `Billed_Amount → grossCharge` and produced `$100.00`.
+- Run B used `Alternate_Billed → grossCharge` and produced `$120.00`.
+- Run B references Run A through `parentRunId`.
+- MappingSet IDs and dependency fingerprints are distinct.
+- Run A remains unchanged; Run B starts with no carried-forward decisions or dispositions.
 
 ## Current verification
 
@@ -32,7 +42,7 @@ pnpm --filter @redwood/core eng001-full
 
 ## Remaining divergences
 
-1. Mapping decisions are not yet consumed as a complete reviewed MappingSet by canonicalization; the shared alias configuration is an intermediate authoritative configuration, not a full reviewed mapping execution pathway.
+1. The successor MappingSet endpoint is implemented and causally rebuilds critical canonical fields, but the Mapping-screen approval/rejection UI does not yet invoke it directly.
 2. Disposition invalidation endpoint coverage remains incomplete, although the persisted endpoint and visible Workbench form are present.
 3. Build 003 CI has not yet run remotely on GitHub.
 4. Native Excel/LibreOffice formula recalculation remains unobserved.
