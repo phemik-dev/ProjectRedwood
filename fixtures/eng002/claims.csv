@@ -1,5 +1,5 @@
-Claim ID,Claim_Version,DOS,claim_submission_date,Billed,Allowed,Provider_ID,Location,Service_Line,Primary_Insurance
-E2-C001,1,2026-01-04,2026-01-05,200.00,150.00,PRV-A,LOC-N,Primary Care,Medicare
-E2-C001,2,2026-01-04,2026-01-10,220.00,165.00,PRV-A,LOC-N,Primary Care,Medicare
-E2-C002,1,2026-02-15,2026-02-16,300.00,210.00,PRV-B,LOC-S,Imaging,BCBS TX
-E2-C003,1,2026-03-20,2026-03-21,100.00,70.00,PRV-C,LOC-S,Lab,Self Pay
+Claim ID,Claim_Version,Version_Status,Supersedes_Version,DOS,claim_submission_date,Billed,Allowed,Provider_ID,Location,Service_Line,Primary_Insurance
+E2-C001,1,original,,2026-01-04,2026-01-05,200.00,150.00,PRV-A,LOC-N,Primary Care,Medicare
+E2-C001,2,replacement,1,2026-01-04,2026-01-10,220.00,165.00,PRV-A,LOC-N,Primary Care,Medicare
+E2-C002,1,original,,2026-02-15,2026-02-16,300.00,210.00,PRV-B,LOC-S,Imaging,BCBS TX
+E2-C003,1,original,,2026-03-20,2026-03-21,100.00,70.00,PRV-C,LOC-S,Lab,Self Pay

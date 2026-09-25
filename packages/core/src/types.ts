@@ -6,7 +6,7 @@ export type Gate = "G0" | "G1" | "G2" | "G3" | "G4" | "G5" | "G6" | "G7";
 
 export interface DealScope { dealId: string; valuationDate: string; analysisPeriodStart: string; analysisPeriodEnd: string; currency: string; entityScope: string[]; methodProfileId: string; methodVersion: string; }
 export interface LineageRecord { sourceFileHash: string; sourceFileName: string; sourceRowId: string; raw: Record<string, string>; }
-export interface Claim { id: string; version: number; serviceDate?: string; submissionDate?: string; payer?: string; provider?: string; location?: string; serviceLine?: string; grossCharge?: Cents; allowedAmount?: Cents; reportedRevenue?: Cents; lineage: LineageRecord; }
+export interface Claim { id: string; familyId: string; version: number; versionStatus: "original" | "corrected" | "replacement" | "voided" | "superseded"; supersedesVersion?: number; serviceDate?: string; submissionDate?: string; payer?: string; provider?: string; location?: string; serviceLine?: string; grossCharge?: Cents; allowedAmount?: Cents; reportedRevenue?: Cents; lineage: LineageRecord; }
 export interface CashEvent { id: string; claimId?: string; type: CashEventType; amount: Cents; paymentDate?: string; payer?: string; lineage: LineageRecord; }
 export interface AdjustmentEvent { id: string; claimId?: string; type: AdjustmentType; amount: Cents; postingDate?: string; payer?: string; lineage: LineageRecord; }
 export interface Receivable { id: string; claimId?: string; snapshotDate: string; balance: Cents; ageBasis: "service_date" | "billing_date" | "claim_submission_date"; ageDays?: number; ageBucket?: string; payer?: string; provider?: string; location?: string; serviceLine?: string; lineage: LineageRecord; }
