@@ -12,3 +12,4 @@ export * from "./mapping.js";
 export * from "./gates.js";
 export * from "./gold-validation.js";
 export * from "./scope.js";
+export * from "./ageing.js";
