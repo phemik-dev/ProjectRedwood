@@ -42,10 +42,15 @@ pnpm --filter @redwood/core eng001-full
 
 ## Remaining divergences
 
-1. Build 003 CI has not yet run remotely on GitHub for the final frozen SHA.
-2. Native Excel/LibreOffice formula recalculation remains unobserved.
-3. Disposition invalidation endpoint coverage remains incomplete, although stale dispositions are inactive when their fingerprint no longer matches.
+1. Native Excel/LibreOffice formula recalculation remains unobserved.
+2. Disposition invalidation endpoint coverage remains incomplete, although stale dispositions are inactive when their fingerprint no longer matches.
+
+## CI result
+
+GitHub Actions passed for SHA `01399967a3e8eb55da9117be1865572b61318dd2`:
+
+https://github.com/phemik-dev/ProjectRedwood/actions/runs/36172719893
 
 ## Assurance 001C readiness
 
-**Ready for Assurance 001C local review, pending remote GitHub Actions verification.** The required successor-run MappingSet lifecycle is demonstrated locally; remaining items are evidence limitations rather than a bypass of the R1 core governance invariant.
+**Ready for Assurance 001C.** The required successor-run MappingSet lifecycle is demonstrated locally and the Build 003 GitHub Actions workflow passed. Remaining items are evidence limitations rather than a bypass of the R1 core governance invariant.
