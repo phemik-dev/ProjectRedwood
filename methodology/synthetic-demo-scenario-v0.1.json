@@ -7,5 +7,6 @@
   "arithmeticToleranceCents": 1,
   "ageingBasis": "service_date",
   "recoveryMethod": "age_bucket_rates",
-  "recoveryRates": { "0-30": 0.9, "31-60": 0.7, "61-90": 0.5, "91-120": 0.3, "121+": 0.1 }
+  "recoveryRates": { "0-30": 0.9, "31-60": 0.7, "61-90": 0.5, "91-120": 0.3, "121+": 0.1 },
+  "reconciliationDispositionPolicy": { "requireEvidence": true, "acceptedWithExceptionMayPassG3": true, "requireNamedReviewer": true, "requireRationale": true }
 }

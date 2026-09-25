@@ -47,5 +47,6 @@
     "rates": { "0-30": null, "31-60": null, "61-90": null, "91-120": null, "121+": null },
     "approvalRequired": true
   },
+  "reconciliationDispositionPolicy": { "requireEvidence": true, "acceptedWithExceptionMayPassG3": false, "requireNamedReviewer": true, "requireRationale": true },
   "releaseRequirements": ["G0", "G1", "G2", "G3", "G4", "G5", "G6", "G7"]
 }
