@@ -7,6 +7,7 @@ import type { AdjustmentEvent, CanonicalDeal, CashEvent, Claim, GLRecord, Lineag
 export interface SourceFile { name: string; type: SourceType; content: string; }
 const field = (row: CsvRow, names: string[]) => names.map((name) => row[name]).find((value) => value !== undefined);
 const validDate = (value: string | undefined) => !value || /^\d{4}-\d{2}-\d{2}$/.test(value) || /^\d{4}-\d{2}$/.test(value);
+function classifyCashType(value: string | undefined): CashEvent["type"] { const normalized = (value ?? "").toLowerCase(); if (normalized.includes("unapplied")) return "unapplied_cash"; if (normalized.includes("patient")) return "patient_payment"; if (normalized.includes("refund")) return "refund"; if (normalized.includes("recoup")) return "recoupment"; if (normalized.includes("transfer")) return "transfer"; if (normalized.includes("secondary")) return "secondary_payer_payment"; return "payer_payment"; }
 const forbiddenPhiHeaders = new Set(["patient_name", "patient name", "first_name", "last_name", "ssn", "social_security_number", "street_address", "address", "clinical_note", "clinical narrative"]);
 function lineage(file: SourceFile, hash: string, index: number, raw: CsvRow): LineageRecord { return { sourceFileHash: hash, sourceFileName: file.name, sourceRowId: stableRowId(hash, index + 2), raw }; }
 function unique<T extends { id: string }>(items: T[], item: T, type: SourceType, quarantine: QuarantineRecord): void { if (items.some((candidate) => candidate.id === item.id)) throw Object.assign(new Error("duplicate"), { quarantine }); items.push(item); }
@@ -33,7 +34,7 @@ export function ingestCsvSources(dealId: string, files: SourceFile[]): Canonical
           const id = field(raw, ["payment_id", "Payment_ID", "Payment ID"]); if (!id) throw new Error("Missing payment ID");
           const amount = parseMoney(field(raw, ["amount", "paid_amount", "Amt Paid", "Paid_Amount"])); if (amount === undefined) throw new Error("Missing payment amount");
           const paymentDate = field(raw, ["payment_date", "Payment_Date"]); if (!validDate(paymentDate)) throw new Error("Invalid payment date");
-          const cash: CashEvent = { id, claimId: field(raw, ["claim_id", "Claim_ID"]), type: (field(raw, ["cash_event_type", "type"]) as CashEvent["type"]) ?? "payer_payment", amount, paymentDate, payer: field(raw, ["payer", "Payer"]), lineage: base };
+          const cash: CashEvent = { id, claimId: field(raw, ["claim_id", "Claim_ID"]), type: classifyCashType(fieldForCanonical(raw, "payment_type") ?? field(raw, ["cash_event_type", "type"])),  amount, paymentDate, payer: field(raw, ["payer", "Payer"]), lineage: base };
           unique(deal.cashEvents, cash, file.type, { sourceType: file.type, sourceRowId, reason: "Duplicate payment ID", raw });
         } else if (file.type === "adjustments") {
           const id = field(raw, ["adjustment_id", "Adjustment_ID", "Adjustment ID"]); if (!id) throw new Error("Missing adjustment ID");
