@@ -1,0 +1,46 @@
+{
+  "sourceDocumentId": "1Wc9cCo-mCt7LmMvNqVn0hP-yUdM58SHXfFcsV4e8lMg",
+  "workbookHash": "581dae68ece024229e68095e86490ec5fbc0d38905a01e04e0fec0b2aa23f4b4",
+  "sheets": [
+    "Claims_Raw",
+    "Payments_Raw",
+    "AR_Snapshot_Raw",
+    "GL_Monthly_Raw"
+  ],
+  "counts": {
+    "claims": 240,
+    "payments": 336,
+    "receivables": 109,
+    "adjustments": 204,
+    "quarantined": 0
+  },
+  "controls": {
+    "grossCharge": "10964656",
+    "allowedAmount": "6911688",
+    "allocatedCollections": "5320559",
+    "unappliedCash": "32145",
+    "openAr": "1591129",
+    "ar120Plus": "902152",
+    "deniedOpenClaimCount": 20,
+    "reconciliation": [
+      {
+        "id": "all-cash-to-gl",
+        "difference": "-75000"
+      },
+      {
+        "id": "matched-cash-to-gl",
+        "difference": "-107145"
+      },
+      {
+        "id": "ar-to-gl",
+        "difference": "140501"
+      }
+    ]
+  },
+  "findings": [
+    "finding:all-cash-to-gl",
+    "finding:matched-cash-to-gl",
+    "finding:ar-to-gl",
+    "finding:unmatched-cash"
+  ]
+}

@@ -62,6 +62,33 @@ Build 001 artifacts remain preserved under their original names.
 4. Formula structure is tested, but native Excel/LibreOffice recalculation has not been independently observed.
 5. Workbench UI does not yet capture a full Deal Scope or a dedicated finding-disposition record.
 
+## Full ENG001 integration regression
+
+- **Drive document ID:** `1Wc9cCo-mCt7LmMvNqVn0hP-yUdM58SHXfFcsV4e8lMg`
+- **Materialized workbook SHA-256:** `581dae68ece024229e68095e86490ec5fbc0d38905a01e04e0fec0b2aa23f4b4`
+- **Raw worksheets processed:** `Claims_Raw`, `Payments_Raw`, `AR_Snapshot_Raw`, `GL_Monthly_Raw`
+- **Validation boundary:** `Validation_Truth` was opened only after the independent raw-sheet engine run completed.
+- **Evidence artifact:** `artifacts/eng001-full-integration.json`
+
+The raw workbook was downloaded once as XLSX. Redwood retained selected-worksheet source rows and source hashes through the existing XLSX adapter. Payments rows produced lineaged paid-cash and, where populated, contractual/denial adjustment events; GL all-cash is defined as `Payer_Cash_Collections + Patient_Collections` rather than a manufactured source column.
+
+All Validation_Truth controls matched at the requested count/exact or ±$0.01 tolerance:
+
+| Control | Redwood result | Expected |
+| --- | ---: | ---: |
+| Claim count | 240 | 240 |
+| Total billed | $109,646.56 | $109,646.56 |
+| Expected allowed | $69,116.88 | $69,116.88 |
+| Matched paid | $53,205.59 | $53,205.59 |
+| Unmatched/unapplied | $321.45 | $321.45 |
+| Open A/R at 2026-06-30 | $15,911.29 | $15,911.29 |
+| Derived 121+ A/R | $9,021.52 | $9,021.52 |
+| Denied-open claims | 20 | 20 |
+| GL cash variance magnitude | $750.00 | $750.00 |
+| Review gate | G3 reconciliation exception | G3 reconciliation exception |
+
+The cash/A/R differences remain open findings. No balancing entry was created, and G3 remains blocked pending a professional disposition.
+
 ## Readiness determination
 
-**Not ready for Assurance 001B yet.** The core remediation mechanisms are materially improved, but the full-corpus integration requirement and the remaining review/scope UX evidence are incomplete. No professional authority or external corpus result has been fabricated to produce a green conclusion.
+**Ready for Assurance 001B engineering re-assurance, not client release.** The authorized full ENG001 corpus has now been independently processed and matched against Validation_Truth after the engine run. Build 002 still has intentionally unapproved professional policy values, a local-only persistence model, and no claim of native Excel recalculation assurance or production HIPAA readiness. These are scope limits, not hidden overrides of the R1 controls.

@@ -10,7 +10,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "tsx --test src/**/*.test.ts",
     "demo": "tsx src/demo.ts",
-    "heldout": "tsx src/heldout-demo.ts"
+    "heldout": "tsx src/heldout-demo.ts",
+    "eng001-full": "tsx src/eng001-full-integration.ts"
   },
   "dependencies": {
     "exceljs": "^4.4.0",

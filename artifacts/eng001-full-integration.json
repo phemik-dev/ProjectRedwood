@@ -1,0 +1,97 @@
+{
+  "sourceDocumentId": "1Wc9cCo-mCt7LmMvNqVn0hP-yUdM58SHXfFcsV4e8lMg",
+  "workbookHash": "581dae68ece024229e68095e86490ec5fbc0d38905a01e04e0fec0b2aa23f4b4",
+  "sheets": [
+    "Claims_Raw",
+    "Payments_Raw",
+    "AR_Snapshot_Raw",
+    "GL_Monthly_Raw"
+  ],
+  "counts": {
+    "claims": 240,
+    "payments": 336,
+    "receivables": 109,
+    "adjustments": 204,
+    "quarantined": 0
+  },
+  "engine": {
+    "Claim_Count": 240,
+    "Total_Billed": 109646.56,
+    "Total_Expected_Allowed": 69116.88,
+    "Matched_Total_Paid": 53205.59,
+    "Unmatched_Payment": 321.45,
+    "Open_AR_2026_06_30": 15911.29,
+    "AR_120_Plus": 9021.52,
+    "Denied_Open_Claim_Count": 20,
+    "Known_GL_Cash_Variance_June_2026": 750,
+    "Expected_Review_Gate": "G3_RECONCILIATION_EXCEPTION"
+  },
+  "comparison": [
+    {
+      "metric": "Claim_Count",
+      "expected": 240,
+      "actual": 240,
+      "matches": true
+    },
+    {
+      "metric": "Total_Billed",
+      "expected": 109646.56,
+      "actual": 109646.56,
+      "matches": true
+    },
+    {
+      "metric": "Total_Expected_Allowed",
+      "expected": 69116.88,
+      "actual": 69116.88,
+      "matches": true
+    },
+    {
+      "metric": "Matched_Total_Paid",
+      "expected": 53205.59,
+      "actual": 53205.59,
+      "matches": true
+    },
+    {
+      "metric": "Unmatched_Payment",
+      "expected": 321.45,
+      "actual": 321.45,
+      "matches": true
+    },
+    {
+      "metric": "Open_AR_2026_06_30",
+      "expected": 15911.29,
+      "actual": 15911.29,
+      "matches": true
+    },
+    {
+      "metric": "AR_120_Plus",
+      "expected": 9021.52,
+      "actual": 9021.52,
+      "matches": true
+    },
+    {
+      "metric": "Denied_Open_Claim_Count",
+      "expected": 20,
+      "actual": 20,
+      "matches": true
+    },
+    {
+      "metric": "Known_GL_Cash_Variance_June_2026",
+      "expected": 750,
+      "actual": 750,
+      "matches": true
+    },
+    {
+      "metric": "Expected_Review_Gate",
+      "expected": "G3_RECONCILIATION_EXCEPTION",
+      "actual": "G3_RECONCILIATION_EXCEPTION",
+      "matches": true
+    }
+  ],
+  "findings": [
+    "finding:all-cash-to-gl",
+    "finding:matched-cash-to-gl",
+    "finding:ar-to-gl",
+    "finding:unmatched-cash"
+  ]
+}

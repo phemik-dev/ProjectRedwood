@@ -4,3 +4,4 @@ apps/*/dist/
 apps/workbench/data/
 *.tsbuildinfo
 .DS_Store
+.tmp/
