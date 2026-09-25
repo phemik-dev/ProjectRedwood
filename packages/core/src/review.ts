@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { ReviewDecision } from "./types.js";
-export interface ApprovalDependencies { runId: string; methodVersion: string; sourceHashes: string[]; mappingHash: string; assumptionHash: string; engineVersion: string; findingHash: string; }
+export interface ApprovalDependencies { runId: string; methodVersion: string; sourceHashes: string[]; mappingHash: string; assumptionHash: string; scopeHash: string; engineVersion: string; findingHash: string; }
 export function dependencyFingerprint(input: ApprovalDependencies): string { return createHash("sha256").update(JSON.stringify({ ...input, sourceHashes: [...input.sourceHashes].sort() })).digest("hex"); }
 export function createDecision(input: Omit<ReviewDecision, "id" | "timestamp">): ReviewDecision { if (!input.reviewer || !input.rationale) throw new Error("Reviewer and rationale are required; checkbox-only approval is forbidden."); return { ...input, id: randomUUID(), timestamp: new Date().toISOString() }; }
 export function invalidateDecision(decision: ReviewDecision, reason: string): ReviewDecision { return { ...decision, invalidatedAt: new Date().toISOString(), invalidationReason: reason }; }
