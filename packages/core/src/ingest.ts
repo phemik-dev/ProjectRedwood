@@ -2,7 +2,7 @@ import { sha256 } from "./hash.js";
 import { parseCsv, stableRowId, type CsvRow } from "./csv.js";
 import { parseMoney } from "./money.js";
 import { fieldForCanonical } from "./mapping.js";
-import type { AdjustmentEvent, CanonicalDeal, CashEvent, Claim, GLRecord, LineageRecord, QuarantineRecord, Receivable, SourceType } from "./types.js";
+import type { AdjustmentEvent, CanonicalDeal, CashEvent, Claim, GLRecord, LineageRecord, MappingDecision, QuarantineRecord, Receivable, SourceType } from "./types.js";
 
 export interface SourceFile { name: string; type: SourceType; content: string; }
 const field = (row: CsvRow, names: string[]) => names.map((name) => row[name]).find((value) => value !== undefined);
@@ -12,7 +12,8 @@ const forbiddenPhiHeaders = new Set(["patient_name", "patient name", "first_name
 function lineage(file: SourceFile, hash: string, index: number, raw: CsvRow): LineageRecord { return { sourceFileHash: hash, sourceFileName: file.name, sourceRowId: stableRowId(hash, index + 2), raw }; }
 function unique<T extends { id: string }>(items: T[], item: T, type: SourceType, quarantine: QuarantineRecord): void { if (items.some((candidate) => candidate.id === item.id)) throw Object.assign(new Error("duplicate"), { quarantine }); items.push(item); }
 
-export function ingestCsvSources(dealId: string, files: SourceFile[]): CanonicalDeal {
+export function ingestCsvSources(dealId: string, files: SourceFile[], mappingSet: MappingDecision[] = []): CanonicalDeal {
+  const mappedField = (raw: CsvRow, sourceType: SourceType, canonical: string, fallback: string[]) => { const decision = mappingSet.find((item) => item.sourceType === sourceType && item.canonicalField === canonical && item.reviewStatus !== "rejected"); return decision ? raw[decision.sourceField] : field(raw, fallback); };
   const deal: CanonicalDeal = { dealId, claims: [], cashEvents: [], adjustmentEvents: [], receivables: [], glRecords: [], quarantined: [] };
   const seenHashes = new Set<string>();
   for (const file of files) {
@@ -26,9 +27,9 @@ export function ingestCsvSources(dealId: string, files: SourceFile[]): Canonical
       const sourceRowId = stableRowId(hash, index + 2); const base = lineage(file, hash, index, raw);
       try {
         if (file.type === "claims") {
-          const id = fieldForCanonical(raw, "claim_id"); if (!id) throw new Error("Missing claim ID");
-          const serviceDate = fieldForCanonical(raw, "service_date"); if (!validDate(serviceDate)) throw new Error("Invalid service date");
-          const version = Number(field(raw, ["claim_version", "Claim_Version"]) ?? "1"); const versionStatus = (field(raw, ["version_status", "claim_status", "Version_Status"]) as Claim["versionStatus"]) ?? "original"; const supersedes = field(raw, ["supersedes_version", "Supersedes_Version"]); const claim: Claim = { id, familyId: field(raw, ["claim_family_id", "Claim_Family_ID"]) ?? id, version, versionStatus, supersedesVersion: supersedes === undefined || supersedes === "" ? undefined : Number(supersedes), serviceDate, submissionDate: field(raw, ["claim_submission_date", "submission_date"]), payer: field(raw, ["payer", "Primary_Insurance"]), provider: field(raw, ["provider", "Provider_ID"]), location: field(raw, ["location", "Location"]), serviceLine: field(raw, ["service_line", "Service_Line"]), grossCharge: parseMoney(field(raw, ["gross_charge", "billed", "Billed", "Billed_Amount"])), allowedAmount: parseMoney(field(raw, ["allowed_amount", "allowed", "Allowed", "Expected_Allowed_Amount"])),  reportedRevenue: parseMoney(field(raw, ["reported_revenue", "revenue"])), lineage: base };
+          const id = mappedField(raw, file.type, "claim_id", ["claim_id", "Claim_ID", "Claim ID"]); if (!id) throw new Error("Missing claim ID");
+          const serviceDate = mappedField(raw, file.type, "service_date", ["service_date", "DOS", "Date of Service"]); if (!validDate(serviceDate)) throw new Error("Invalid service date");
+          const version = Number(field(raw, ["claim_version", "Claim_Version"]) ?? "1"); const versionStatus = (field(raw, ["version_status", "claim_status", "Version_Status"]) as Claim["versionStatus"]) ?? "original"; const supersedes = field(raw, ["supersedes_version", "Supersedes_Version"]); const claim: Claim = { id, familyId: field(raw, ["claim_family_id", "Claim_Family_ID"]) ?? id, version, versionStatus, supersedesVersion: supersedes === undefined || supersedes === "" ? undefined : Number(supersedes), serviceDate, submissionDate: field(raw, ["claim_submission_date", "submission_date"]), payer: field(raw, ["payer", "Primary_Insurance"]), provider: field(raw, ["provider", "Provider_ID"]), location: field(raw, ["location", "Location"]), serviceLine: field(raw, ["service_line", "Service_Line"]), grossCharge: parseMoney(mappedField(raw, file.type, "gross_charge", ["gross_charge", "billed", "Billed", "Billed_Amount"])), allowedAmount: parseMoney(mappedField(raw, file.type, "allowed_amount", ["allowed_amount", "allowed", "Allowed", "Expected_Allowed_Amount"])),  reportedRevenue: parseMoney(field(raw, ["reported_revenue", "revenue"])), lineage: base };
           if (deal.claims.some((candidate) => candidate.id === claim.id && candidate.version === claim.version)) throw new Error("Duplicate claim/version"); deal.claims.push(claim);
         } else if (file.type === "payments") {
           const id = field(raw, ["payment_id", "Payment_ID", "Payment ID"]); if (!id) throw new Error("Missing payment ID");
