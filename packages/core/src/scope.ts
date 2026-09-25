@@ -1,0 +1,3 @@
+import type { DealScope } from "./types.js";
+export function validateScope(scope: DealScope): DealScope { if (!/^\d{4}-\d{2}-\d{2}$/.test(scope.valuationDate) || !/^\d{4}-\d{2}-\d{2}$/.test(scope.analysisPeriodStart) || !/^\d{4}-\d{2}-\d{2}$/.test(scope.analysisPeriodEnd)) throw new Error("Deal Scope requires ISO valuation and analysis-period dates"); if (scope.analysisPeriodStart > scope.analysisPeriodEnd || scope.analysisPeriodEnd > scope.valuationDate) throw new Error("Deal Scope analysis period must end on or before valuation date"); return scope; }
+export const onOrBefore = (date: string | undefined, cutoff: string): boolean => date !== undefined && date <= cutoff;
