@@ -1,0 +1,26 @@
+name: Redwood R1 verification
+on:
+  push:
+    branches: [build/redwood-r1-remediation-v0.2]
+  pull_request:
+    branches: [build/redwood-r1-remediation-v0.2]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.3.4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm demo
+      - run: pnpm heldout
+      - run: node scripts/validate-conformance.mjs docs/evidence/redwood-r1-remediation-v0.2.conformance.json
