@@ -1,9 +1,9 @@
 name: Redwood R1 verification
 on:
   push:
-    branches: [build/redwood-r1-remediation-v0.2]
+    branches: [build/redwood-r1-closure-v0.3]
   pull_request:
-    branches: [build/redwood-r1-remediation-v0.2]
+    branches: [build/redwood-r1-closure-v0.3]
 
 jobs:
   verify:
@@ -23,4 +23,4 @@ jobs:
       - run: pnpm test
       - run: pnpm demo
       - run: pnpm heldout
-      - run: node scripts/validate-conformance.mjs docs/evidence/redwood-r1-remediation-v0.2.conformance.json
+      - run: node scripts/validate-conformance.mjs docs/evidence/redwood-r1-closure-v0.3.conformance.json
