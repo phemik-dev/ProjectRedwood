@@ -54,7 +54,7 @@ jobs:
           pages=[
               ("RVU26D","https://www.cms.gov/medicare/payment/fee-schedules/physician/pfs-relative-value-files/rvu26d"),
               ("PFREV26D","https://www.cms.gov/medicare/payment/fee-schedules/physician/national-payment-amount-file/pfrev26d"),
-              ("ZIP_LOCALITY","https://www.cms.gov/medicare/payment/fee-schedules/physician/carrier-specific-files/zip-code-carrier-locality-file"),
+              ("ZIP_LOCALITY","https://www.cms.gov/medicare/payment/fee-schedules"),
               ("ALL_STATES_2026","https://www.cms.gov/medicare/payment/fee-schedules/physician/carrier-specific-files/all-states-2026"),
           ]
 
