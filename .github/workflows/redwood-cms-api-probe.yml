@@ -1,0 +1,112 @@
+name: Redwood CMS API Probe
+
+on:
+  push:
+    paths:
+      - ".github/workflows/redwood-cms-api-probe.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe CMS dataset APIs and source schemas
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p probe
+          python3 - <<'PY'
+          import csv, json, urllib.request, urllib.parse, os
+
+          UA={"User-Agent":"Redwood-Research-Acquisition/1.1"}
+          out={"datasets":[]}
+
+          datasets=[
+            ("provider_service","335e5f35-eca6-482d-87b3-f99883e213e3"),
+            ("provider_summary","4d0b2df0-1e99-4db7-a574-a571d99217f1"),
+            ("geography_service","0c75b0b3-b40f-4007-a5ac-f9f2fed95862"),
+            ("public_provider_enrollment","903dcfa5-4924-4775-8676-4fa0f6a8aee9"),
+          ]
+
+          def fetch_json(url):
+              req=urllib.request.Request(url,headers=UA)
+              with urllib.request.urlopen(req,timeout=120) as r:
+                  return json.loads(r.read())
+
+          for slug,did in datasets:
+              rec={"slug":slug,"dataset_id":did}
+              for candidate in [
+                f"https://data.cms.gov/data-api/v1/dataset/{did}/data?size=2&offset=0",
+                f"https://data.cms.gov/data-api/v1/dataset/{did}/data?offset=0&size=2",
+              ]:
+                  try:
+                      data=fetch_json(candidate)
+                      rec["api_url"]=candidate
+                      rec["api_ok"]=True
+                      rec["sample_type"]=type(data).__name__
+                      if isinstance(data,list):
+                          rec["sample_count"]=len(data)
+                          rec["columns"]=list(data[0].keys()) if data else []
+                          rec["sample_rows"]=data[:2]
+                      elif isinstance(data,dict):
+                          rec["keys"]=list(data.keys())
+                          rows=data.get("data") or data.get("results") or []
+                          rec["sample_count"]=len(rows) if isinstance(rows,list) else None
+                          rec["columns"]=list(rows[0].keys()) if isinstance(rows,list) and rows else []
+                          rec["sample_rows"]=rows[:2] if isinstance(rows,list) else []
+                      break
+                  except Exception as e:
+                      rec.setdefault("errors",[]).append({"url":candidate,"error":repr(e)})
+              out["datasets"].append(rec)
+
+          # Probe exact source CSV headers with ranged/stream reads.
+          source_urls={
+            "doctors_clinicians_national":"https://data.cms.gov/provider-data/sites/default/files/resources/52c3f098d7e56028a298fd297cb0b38d_1787091341/DAC_NationalDownloadableFile.csv",
+            "facility_affiliation":"https://data.cms.gov/provider-data/sites/default/files/resources/b7c4080ae144663e43353a9c35cd3f53_1787091342/Facility_Affiliation.csv",
+            "doctors_clinicians_utilization":"https://data.cms.gov/provider-data/sites/default/files/resources/72eedb23fcbe1ef3666f89db01b85e1d_1787091342/Utilization.csv",
+          }
+
+          schema={}
+          for slug,url in source_urls.items():
+              req=urllib.request.Request(url,headers=UA)
+              with urllib.request.urlopen(req,timeout=180) as r:
+                  # Read enough to capture header + a few rows, then close.
+                  buf=b""
+                  while buf.count(b"\n")<6 and len(buf)<2_000_000:
+                      chunk=r.read(65536)
+                      if not chunk: break
+                      buf+=chunk
+              text=buf.decode("utf-8-sig",errors="replace")
+              lines=text.splitlines()[:6]
+              reader=csv.reader(lines)
+              rows=list(reader)
+              schema[slug]={
+                "columns":rows[0] if rows else [],
+                "sample_rows":rows[1:4] if len(rows)>1 else []
+              }
+
+          out["source_schema"]=schema
+
+          # Probe NPI Registry API behavior with a known NPI from CMS sample if possible later;
+          # here just document endpoint reachability using a public example NPI.
+          npi_url="https://npiregistry.cms.hhs.gov/api/?version=2.1&number=1235146762"
+          try:
+              npi=fetch_json(npi_url)
+              out["npi_registry"]={"ok":True,"result_count":npi.get("result_count"),"keys":list(npi.keys())}
+          except Exception as e:
+              out["npi_registry"]={"ok":False,"error":repr(e)}
+
+          with open("probe/API_PROBE.json","w") as f:
+              json.dump(out,f,indent=2,sort_keys=True)
+          with open("probe/README.md","w") as f:
+              f.write("# Redwood CMS API probe\n\nDetermines whether huge CMS datasets can be queried selectively and records live source schemas.\n")
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: redwood-cms-api-probe
+          path: probe/
+          retention-days: 1
