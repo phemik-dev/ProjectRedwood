@@ -18,8 +18,9 @@ jobs:
         shell: bash
         run: |
           set -u
-          mkdir -p corpus/cms_desynpuf_sample1
-          cat > corpus/cms_desynpuf_sample1/SOURCE_URLS.tsv <<'EOF'
+          root="corpus/cms_desynpuf_sample1"
+          mkdir -p "$root/raw" "$root/derived_samples"
+          cat > "$root/SOURCE_URLS.tsv" <<'EOF'
           file_name	official_url	role
           DE1_0_2008_beneficiary_summary_file_sample_1.zip	https://www.cms.gov/research-statistics-data-and-systems/downloadable-public-use-files/synpufs/downloads/de1_0_2008_beneficiary_summary_file_sample_1.zip	beneficiary_2008
           DE1_0_2009_beneficiary_summary_file_sample_1.zip	https://www.cms.gov/research-statistics-data-and-systems/downloadable-public-use-files/synpufs/downloads/de1_0_2009_beneficiary_summary_file_sample_1.zip	beneficiary_2009
@@ -34,16 +35,25 @@ jobs:
           de-10-frequently-asked-questions.pdf	https://www.cms.gov/files/document/de-10-frequently-asked-questions.pdf	faq
           EOF
 
-          printf "file_name\tstatus\tbytes\tsha256\tofficial_url\n" > corpus/cms_desynpuf_sample1/ACQUISITION_STATUS.tsv
-          tail -n +2 corpus/cms_desynpuf_sample1/SOURCE_URLS.tsv | while IFS=$'\t' read -r name url role; do
+          printf "file_name\tstatus\tbytes\tsha256\tofficial_url\n" > "$root/ACQUISITION_STATUS.tsv"
+          tail -n +2 "$root/SOURCE_URLS.tsv" | while IFS=$'\t' read -r name url role; do
             echo "::group::Downloading $name"
-            if curl -fL --retry 5 --retry-delay 3 --connect-timeout 30 --max-time 1200 -A "Redwood-Research-Acquisition/0.1" -o "corpus/cms_desynpuf_sample1/$name" "$url"; then
-              bytes=$(stat -c%s "corpus/cms_desynpuf_sample1/$name")
-              hash=$(sha256sum "corpus/cms_desynpuf_sample1/$name" | awk '{print $1}')
-              printf "%s\tACQUIRED\t%s\t%s\t%s\n" "$name" "$bytes" "$hash" "$url" >> corpus/cms_desynpuf_sample1/ACQUISITION_STATUS.tsv
+            if curl -fL --retry 5 --retry-delay 3 --connect-timeout 30 --max-time 1200 -A "Redwood-Research-Acquisition/0.2" -o "$root/raw/$name" "$url"; then
+              bytes=$(stat -c%s "$root/raw/$name")
+              hash=$(sha256sum "$root/raw/$name" | awk '{print $1}')
+              printf "%s\tACQUIRED\t%s\t%s\t%s\n" "$name" "$bytes" "$hash" "$url" >> "$root/ACQUISITION_STATUS.tsv"
+              case "$name" in
+                *.zip)
+                  first_csv=$(unzip -Z1 "$root/raw/$name" 2>/dev/null | grep -Ei '\.csv$' | head -n 1 || true)
+                  if [ -n "$first_csv" ]; then
+                    safe=$(basename "$name" .zip)
+                    unzip -p "$root/raw/$name" "$first_csv" | head -n 10001 > "$root/derived_samples/${safe}__first_10000_rows.csv" || true
+                  fi
+                  ;;
+              esac
             else
-              rm -f "corpus/cms_desynpuf_sample1/$name"
-              printf "%s\tFAILED\t0\t\t%s\n" "$name" "$url" >> corpus/cms_desynpuf_sample1/ACQUISITION_STATUS.tsv
+              rm -f "$root/raw/$name"
+              printf "%s\tFAILED\t0\t\t%s\n" "$name" "$url" >> "$root/ACQUISITION_STATUS.tsv"
             fi
             echo "::endgroup::"
           done
@@ -52,22 +62,112 @@ jobs:
             echo "# CMS DE-SynPUF Sample 1 — Redwood acquisition receipt"
             echo
             echo "Acquired from official CMS endpoints by ProjectRedwood GitHub Actions."
-            echo
-            echo "Purpose: public/synthetic claims-source testing and simulation seed material."
-            echo
-            echo "Important: preserve raw files unchanged. Derived Redwood fixtures belong in a separate derived folder."
+            echo "Raw files are immutable source evidence; derived_samples contains bounded first-10,000-row CSV fixtures for Redwood ingestion tests."
             echo
             echo "Run: $GITHUB_RUN_ID"
             echo "Commit: $GITHUB_SHA"
-            echo
-            echo "See ACQUISITION_STATUS.tsv and SOURCE_URLS.tsv for per-file provenance and SHA-256."
-          } > corpus/cms_desynpuf_sample1/README.md
+          } > "$root/README.md"
 
-      - name: Upload acquired corpus as ephemeral transfer artifact
+          {
+            echo "# Derived sample fixtures"
+            echo
+            echo "Each CSV is a deterministic first-10,000-data-row slice (plus header) from the first CSV found inside the corresponding official CMS ZIP."
+            echo "These are derived test fixtures, not substitutes for the raw CMS archives."
+          } > "$root/derived_samples/README.md"
+
+          (cd "$root" && sha256sum derived_samples/* 2>/dev/null || true) > "$root/DERIVED_SHA256SUMS.txt"
+
+      - name: Upload receipts and derived samples
         uses: actions/upload-artifact@v4
         with:
-          name: redwood-cms-desynpuf-sample1
-          path: corpus/cms_desynpuf_sample1/
-          if-no-files-found: error
+          name: redwood-cms-desynpuf-sample1-derived
+          path: |
+            corpus/cms_desynpuf_sample1/README.md
+            corpus/cms_desynpuf_sample1/SOURCE_URLS.tsv
+            corpus/cms_desynpuf_sample1/ACQUISITION_STATUS.tsv
+            corpus/cms_desynpuf_sample1/DERIVED_SHA256SUMS.txt
+            corpus/cms_desynpuf_sample1/derived_samples/
+          retention-days: 1
+
+      - name: Upload carrier 1A
+        uses: actions/upload-artifact@v4
+        with:
+          name: cms-desynpuf-carrier-1a
+          path: corpus/cms_desynpuf_sample1/raw/DE1_0_2008_to_2010_Carrier_Claims_Sample_1A.zip
+          if-no-files-found: warn
           retention-days: 1
           compression-level: 0
+
+      - name: Upload carrier 1B
+        uses: actions/upload-artifact@v4
+        with:
+          name: cms-desynpuf-carrier-1b
+          path: corpus/cms_desynpuf_sample1/raw/DE1_0_2008_to_2010_Carrier_Claims_Sample_1B.zip
+          if-no-files-found: warn
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload inpatient
+        uses: actions/upload-artifact@v4
+        with:
+          name: cms-desynpuf-inpatient
+          path: corpus/cms_desynpuf_sample1/raw/DE1_0_2008_to_2010_inpatient_claims_sample_1.zip
+          if-no-files-found: warn
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload outpatient
+        uses: actions/upload-artifact@v4
+        with:
+          name: cms-desynpuf-outpatient
+          path: corpus/cms_desynpuf_sample1/raw/DE1_0_2008_to_2010_outpatient_claims_sample_1.zip
+          if-no-files-found: warn
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload PDE
+        uses: actions/upload-artifact@v4
+        with:
+          name: cms-desynpuf-pde
+          path: corpus/cms_desynpuf_sample1/raw/DE1_0_2008_to_2010_Prescription_Drug_Events_Sample_1.zip
+          if-no-files-found: warn
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload beneficiary 2008
+        uses: actions/upload-artifact@v4
+        with:
+          name: cms-desynpuf-bene-2008
+          path: corpus/cms_desynpuf_sample1/raw/DE1_0_2008_beneficiary_summary_file_sample_1.zip
+          if-no-files-found: warn
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload beneficiary 2009
+        uses: actions/upload-artifact@v4
+        with:
+          name: cms-desynpuf-bene-2009
+          path: corpus/cms_desynpuf_sample1/raw/DE1_0_2009_beneficiary_summary_file_sample_1.zip
+          if-no-files-found: warn
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload beneficiary 2010
+        uses: actions/upload-artifact@v4
+        with:
+          name: cms-desynpuf-bene-2010
+          path: corpus/cms_desynpuf_sample1/raw/DE1_0_2010_beneficiary_summary_file_sample_1.zip
+          if-no-files-found: warn
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload documentation
+        uses: actions/upload-artifact@v4
+        with:
+          name: cms-desynpuf-documentation
+          path: |
+            corpus/cms_desynpuf_sample1/raw/synpuf_dug.pdf
+            corpus/cms_desynpuf_sample1/raw/de-10-codebook.pdf
+            corpus/cms_desynpuf_sample1/raw/de-10-frequently-asked-questions.pdf
+          if-no-files-found: warn
+          retention-days: 1
