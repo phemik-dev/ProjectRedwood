@@ -131,7 +131,7 @@ jobs:
           nppes=[]
           for txt,href in p.links:
               low=(txt+" "+str(href)).lower()
-              if ".zip" in low and ("monthly" in low or "full replacement" in low) and ("v.2" in low or "v2" in low or "npidata" in low):
+              if ".zip" in low and "deactivat" not in low and ("monthly" in low or "data dissemination" in low or "full replacement" in low) and ("v.2" in low or "v2" in low or "npidata" in low):
                   full=urllib.parse.urljoin(nppes_page,href)
                   nppes.append((txt,full))
           # Favor the first full replacement V2 link on the current page.
