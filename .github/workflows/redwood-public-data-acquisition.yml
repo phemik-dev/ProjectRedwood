@@ -1,0 +1,73 @@
+name: Redwood Public Data Acquisition
+
+on:
+  push:
+    paths:
+      - ".github/workflows/redwood-public-data-acquisition.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  acquire-cms-desynpuf:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Acquire CMS DE-SynPUF Sample 1
+        shell: bash
+        run: |
+          set -u
+          mkdir -p corpus/cms_desynpuf_sample1
+          cat > corpus/cms_desynpuf_sample1/SOURCE_URLS.tsv <<'EOF'
+          file_name	official_url	role
+          DE1_0_2008_beneficiary_summary_file_sample_1.zip	https://www.cms.gov/research-statistics-data-and-systems/downloadable-public-use-files/synpufs/downloads/de1_0_2008_beneficiary_summary_file_sample_1.zip	beneficiary_2008
+          DE1_0_2009_beneficiary_summary_file_sample_1.zip	https://www.cms.gov/research-statistics-data-and-systems/downloadable-public-use-files/synpufs/downloads/de1_0_2009_beneficiary_summary_file_sample_1.zip	beneficiary_2009
+          DE1_0_2010_beneficiary_summary_file_sample_1.zip	https://www.cms.gov/research-statistics-data-and-systems/downloadable-public-use-files/synpufs/downloads/de1_0_2010_beneficiary_summary_file_sample_1.zip	beneficiary_2010
+          DE1_0_2008_to_2010_Carrier_Claims_Sample_1A.zip	https://downloads.cms.gov/files/DE1_0_2008_to_2010_Carrier_Claims_Sample_1A.zip	carrier_claims_part_a
+          DE1_0_2008_to_2010_Carrier_Claims_Sample_1B.zip	https://downloads.cms.gov/files/DE1_0_2008_to_2010_Carrier_Claims_Sample_1B.zip	carrier_claims_part_b
+          DE1_0_2008_to_2010_inpatient_claims_sample_1.zip	https://www.cms.gov/research-statistics-data-and-systems/downloadable-public-use-files/synpufs/downloads/de1_0_2008_to_2010_inpatient_claims_sample_1.zip	inpatient_claims
+          DE1_0_2008_to_2010_outpatient_claims_sample_1.zip	https://www.cms.gov/research-statistics-data-and-systems/downloadable-public-use-files/synpufs/downloads/de1_0_2008_to_2010_outpatient_claims_sample_1.zip	outpatient_claims
+          DE1_0_2008_to_2010_Prescription_Drug_Events_Sample_1.zip	https://downloads.cms.gov/files/DE1_0_2008_to_2010_Prescription_Drug_Events_Sample_1.zip	prescription_drug_events
+          synpuf_dug.pdf	https://www.cms.gov/research-statistics-data-and-systems/downloadable-public-use-files/synpufs/downloads/synpuf_dug.pdf	data_user_guide
+          de-10-codebook.pdf	https://www.cms.gov/files/document/de-10-codebook.pdf-0	codebook
+          de-10-frequently-asked-questions.pdf	https://www.cms.gov/files/document/de-10-frequently-asked-questions.pdf	faq
+          EOF
+
+          printf "file_name\tstatus\tbytes\tsha256\tofficial_url\n" > corpus/cms_desynpuf_sample1/ACQUISITION_STATUS.tsv
+          tail -n +2 corpus/cms_desynpuf_sample1/SOURCE_URLS.tsv | while IFS=$'\t' read -r name url role; do
+            echo "::group::Downloading $name"
+            if curl -fL --retry 5 --retry-delay 3 --connect-timeout 30 --max-time 1200 -A "Redwood-Research-Acquisition/0.1" -o "corpus/cms_desynpuf_sample1/$name" "$url"; then
+              bytes=$(stat -c%s "corpus/cms_desynpuf_sample1/$name")
+              hash=$(sha256sum "corpus/cms_desynpuf_sample1/$name" | awk '{print $1}')
+              printf "%s\tACQUIRED\t%s\t%s\t%s\n" "$name" "$bytes" "$hash" "$url" >> corpus/cms_desynpuf_sample1/ACQUISITION_STATUS.tsv
+            else
+              rm -f "corpus/cms_desynpuf_sample1/$name"
+              printf "%s\tFAILED\t0\t\t%s\n" "$name" "$url" >> corpus/cms_desynpuf_sample1/ACQUISITION_STATUS.tsv
+            fi
+            echo "::endgroup::"
+          done
+
+          {
+            echo "# CMS DE-SynPUF Sample 1 — Redwood acquisition receipt"
+            echo
+            echo "Acquired from official CMS endpoints by ProjectRedwood GitHub Actions."
+            echo
+            echo "Purpose: public/synthetic claims-source testing and simulation seed material."
+            echo
+            echo "Important: preserve raw files unchanged. Derived Redwood fixtures belong in a separate derived folder."
+            echo
+            echo "Run: $GITHUB_RUN_ID"
+            echo "Commit: $GITHUB_SHA"
+            echo
+            echo "See ACQUISITION_STATUS.tsv and SOURCE_URLS.tsv for per-file provenance and SHA-256."
+          } > corpus/cms_desynpuf_sample1/README.md
+
+      - name: Upload acquired corpus as ephemeral transfer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: redwood-cms-desynpuf-sample1
+          path: corpus/cms_desynpuf_sample1/
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
