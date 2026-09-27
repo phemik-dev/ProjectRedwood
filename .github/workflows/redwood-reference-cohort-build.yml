@@ -1,0 +1,406 @@
+name: Redwood Reference Cohort Build
+
+on:
+  push:
+    paths:
+      - ".github/workflows/redwood-reference-cohort-build.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Build compact cross-linked real-world cohort
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="reference_cohort"
+          mkdir -p "$root/observed" "$root/derived" "$root/control" "$root/tmp"
+
+          curl -fL --retry 5 --retry-delay 3 --connect-timeout 30 --max-time 1200             -A "Redwood-Reference-Cohort/0.1"             -o "$root/tmp/DAC_NationalDownloadableFile.csv"             "https://data.cms.gov/provider-data/sites/default/files/resources/52c3f098d7e56028a298fd297cb0b38d_1787091341/DAC_NationalDownloadableFile.csv"
+
+          curl -fL --retry 5 --retry-delay 3 --connect-timeout 30 --max-time 1200             -A "Redwood-Reference-Cohort/0.1"             -o "$root/tmp/Facility_Affiliation.csv"             "https://data.cms.gov/provider-data/sites/default/files/resources/b7c4080ae144663e43353a9c35cd3f53_1787091342/Facility_Affiliation.csv"
+
+          curl -fL --retry 5 --retry-delay 3 --connect-timeout 30 --max-time 1200             -A "Redwood-Reference-Cohort/0.1"             -o "$root/tmp/Utilization.csv"             "https://data.cms.gov/provider-data/sites/default/files/resources/72eedb23fcbe1ef3666f89db01b85e1d_1787091342/Utilization.csv"
+
+          python3 - <<'PY'
+          import csv, json, os, re, urllib.request, urllib.parse, hashlib, collections, time
+          from decimal import Decimal, InvalidOperation
+
+          ROOT="reference_cohort"
+          OBS=os.path.join(ROOT,"observed")
+          DER=os.path.join(ROOT,"derived")
+          CTRL=os.path.join(ROOT,"control")
+          UA={"User-Agent":"Redwood-Reference-Cohort/0.1"}
+
+          states=["TX","FL","CA","NY"]
+          specialty_rules=[
+              ("Ophthalmology",lambda s:"OPHTHAL" in s),
+              ("Orthopedic Surgery",lambda s:"ORTHOP" in s),
+              ("Cardiology",lambda s:"CARDIO" in s),
+              ("Gastroenterology",lambda s:"GASTRO" in s),
+              ("Dermatology",lambda s:"DERMAT" in s),
+              ("Urology",lambda s:"UROLOG" in s),
+          ]
+
+          def d(v):
+              try: return Decimal(str(v).replace(",","").strip() or "0")
+              except InvalidOperation: return Decimal("0")
+
+          def fetch_json(url,timeout=180):
+              req=urllib.request.Request(url,headers=UA)
+              with urllib.request.urlopen(req,timeout=timeout) as r:
+                  return json.loads(r.read())
+
+          def api_rows(dataset_id, filters=None, size=5000, offset=0, sort=None):
+              params={"size":str(size),"offset":str(offset)}
+              for k,v in (filters or {}).items():
+                  params[f"filter[{k}]"]=str(v)
+              if sort: params["sort"]=sort
+              url=f"https://data.cms.gov/data-api/v1/dataset/{dataset_id}/data?"+urllib.parse.urlencode(params)
+              data=fetch_json(url)
+              return data if isinstance(data,list) else (data.get("data") or data.get("results") or [])
+
+          # --------------------
+          # 1) Deterministic group-based clinician selection
+          # --------------------
+          national=os.path.join(ROOT,"tmp","DAC_NationalDownloadableFile.csv")
+          candidates=collections.defaultdict(lambda:collections.defaultdict(list))
+          selected_source_rows=[]
+
+          with open(national,"r",encoding="utf-8-sig",errors="replace",newline="") as f:
+              r=csv.DictReader(f)
+              for row in r:
+                  st=(row.get("State") or "").strip()
+                  if st not in states: continue
+                  spec=(row.get("pri_spec") or "").upper().strip()
+                  mapped=None
+                  for label,fn in specialty_rules:
+                      if fn(spec):
+                          mapped=label; break
+                  if not mapped: continue
+                  npi=(row.get("NPI") or "").strip()
+                  org=(row.get("org_pac_id") or "").strip()
+                  if not npi or not org: continue
+                  try: members=int(float((row.get("num_org_mem") or "0").strip() or "0"))
+                  except: members=0
+                  if members < 5: continue
+                  key=(mapped,st)
+                  candidates[key][org].append(row)
+
+          selected=[]
+          selection_cells=[]
+          for spec,_ in specialty_rules:
+              for st in states:
+                  key=(spec,st)
+                  orgs=candidates.get(key,{})
+                  qualified=[]
+                  for org,rows in orgs.items():
+                      uniq={x.get("NPI"):x for x in rows if x.get("NPI")}
+                      if len(uniq)>=2:
+                          qualified.append((org,sorted(uniq.values(),key=lambda x:x.get("NPI"))))
+                  qualified.sort(key=lambda x:x[0])
+                  if not qualified:
+                      selection_cells.append({"specialty":spec,"state":st,"status":"NO_QUALIFIED_GROUP"})
+                      continue
+                  org,rows=qualified[0]
+                  chosen=rows[:2]
+                  for row in chosen:
+                      row=dict(row)
+                      row["redwood_specialty"]=spec
+                      row["redwood_selection_state"]=st
+                      row["redwood_selection_org_pac_id"]=org
+                      selected.append(row)
+                  selection_cells.append({
+                      "specialty":spec,"state":st,"status":"SELECTED",
+                      "org_pac_id":org,
+                      "npi":[x.get("NPI") for x in chosen],
+                      "num_org_mem":chosen[0].get("num_org_mem")
+                  })
+
+          # Fill any shortfall deterministically from other qualifying groups while preserving specialty diversity.
+          target=48
+          used={x["NPI"] for x in selected}
+          if len(selected)<target:
+              pool=[]
+              for (spec,st),orgmap in candidates.items():
+                  for org,rows in orgmap.items():
+                      for row in rows:
+                          if row.get("NPI") and row.get("NPI") not in used:
+                              rr=dict(row); rr["redwood_specialty"]=spec; rr["redwood_selection_state"]=st; rr["redwood_selection_org_pac_id"]=org
+                              pool.append(rr)
+              pool.sort(key=lambda x:(x["redwood_specialty"],x["redwood_selection_state"],x["redwood_selection_org_pac_id"],x["NPI"]))
+              for row in pool:
+                  if len(selected)>=target: break
+                  if row["NPI"] in used: continue
+                  selected.append(row); used.add(row["NPI"])
+
+          selected=selected[:target]
+          npis=sorted({x["NPI"] for x in selected})
+          npi_set=set(npis)
+
+          if len(npis)<36:
+              raise RuntimeError(f"Reference cohort too small after deterministic selection: {len(npis)} NPIs")
+
+          # Write selected clinician rows.
+          clinician_fields=list(selected[0].keys())
+          with open(os.path.join(OBS,"cohort_clinicians.csv"),"w",encoding="utf-8",newline="") as f:
+              w=csv.DictWriter(f,fieldnames=clinician_fields,extrasaction="ignore")
+              w.writeheader(); w.writerows(selected)
+
+          # Organizations from observed group fields.
+          orgs={}
+          for row in selected:
+              org=row.get("org_pac_id")
+              if not org: continue
+              key=(org,row.get("State"),row.get("adr_ln_1"),row.get("ZIP Code"))
+              rec=orgs.setdefault(key,{
+                  "org_pac_id":org,
+                  "state":row.get("State"),
+                  "address":row.get("adr_ln_1"),
+                  "zip_code":row.get("ZIP Code"),
+                  "reported_num_org_mem":row.get("num_org_mem"),
+                  "selected_clinician_count":0,
+                  "selected_npis":[]
+              })
+              rec["selected_clinician_count"]+=1
+              rec["selected_npis"].append(row.get("NPI"))
+          with open(os.path.join(OBS,"cohort_organizations.csv"),"w",encoding="utf-8",newline="") as f:
+              fields=["org_pac_id","state","address","zip_code","reported_num_org_mem","selected_clinician_count","selected_npis"]
+              w=csv.DictWriter(f,fieldnames=fields); w.writeheader()
+              for rec in sorted(orgs.values(),key=lambda x:(x["state"] or "",x["org_pac_id"] or "")):
+                  rr=dict(rec); rr["selected_npis"]="|".join(sorted(rr["selected_npis"]))
+                  w.writerow(rr)
+
+          # --------------------
+          # 2) CMS provider summary and service economics via selective API
+          # --------------------
+          provider_summary_id="4d0b2df0-1e99-4db7-a574-a571d99217f1"
+          provider_service_id="335e5f35-eca6-482d-87b3-f99883e213e3"
+          enrollment_id="903dcfa5-4924-4775-8676-4fa0f6a8aee9"
+          geography_id="0c75b0b3-b40f-4007-a5ac-f9f2fed95862"
+
+          summaries=[]
+          services=[]
+          enrollments=[]
+          for idx,npi in enumerate(npis,1):
+              sr=api_rows(provider_summary_id,{"Rndrng_NPI":npi},size=50,sort="Rndrng_NPI")
+              summaries.extend(sr)
+              sv=api_rows(provider_service_id,{"Rndrng_NPI":npi},size=5000,sort="HCPCS_Cd")
+              services.extend(sv)
+              er=api_rows(enrollment_id,{"NPI":npi},size=500,sort="NPI")
+              enrollments.extend(er)
+              if idx%10==0: time.sleep(0.25)
+
+          def write_rows(path,rows):
+              if not rows:
+                  open(path,"w").close(); return
+              fields=[]
+              seen=set()
+              for row in rows:
+                  for k in row:
+                      if k not in seen: seen.add(k); fields.append(k)
+              with open(path,"w",encoding="utf-8",newline="") as f:
+                  w=csv.DictWriter(f,fieldnames=fields,extrasaction="ignore")
+                  w.writeheader(); w.writerows(rows)
+
+          write_rows(os.path.join(OBS,"cohort_provider_summary.csv"),summaries)
+          write_rows(os.path.join(OBS,"cohort_provider_service.csv"),services)
+          write_rows(os.path.join(OBS,"cohort_public_enrollment.csv"),enrollments)
+
+          # --------------------
+          # 3) NPI Registry enrichment
+          # --------------------
+          npi_json=[]
+          npi_summary=[]
+          for npi in npis:
+              data=fetch_json("https://npiregistry.cms.hhs.gov/api/?"+urllib.parse.urlencode({"version":"2.1","number":npi}))
+              npi_json.append({"npi":npi,"response":data})
+              res=(data.get("results") or [{}])[0] if data.get("result_count") else {}
+              basic=res.get("basic") or {}
+              addrs=res.get("addresses") or []
+              loc=next((a for a in addrs if a.get("address_purpose")=="LOCATION"), addrs[0] if addrs else {})
+              tax=res.get("taxonomies") or []
+              primary=next((t for t in tax if t.get("primary")), tax[0] if tax else {})
+              npi_summary.append({
+                  "NPI":npi,
+                  "enumeration_type":res.get("enumeration_type"),
+                  "first_name":basic.get("first_name"),
+                  "last_name":basic.get("last_name"),
+                  "organization_name":basic.get("organization_name"),
+                  "status":basic.get("status"),
+                  "credential":basic.get("credential"),
+                  "location_address_1":loc.get("address_1"),
+                  "location_city":loc.get("city"),
+                  "location_state":loc.get("state"),
+                  "location_postal_code":loc.get("postal_code"),
+                  "primary_taxonomy_code":primary.get("code"),
+                  "primary_taxonomy_desc":primary.get("desc"),
+              })
+          with open(os.path.join(OBS,"cohort_npi_registry.jsonl"),"w",encoding="utf-8") as f:
+              for x in npi_json: f.write(json.dumps(x,sort_keys=True)+"\n")
+          write_rows(os.path.join(OBS,"cohort_npi_registry_summary.csv"),npi_summary)
+
+          # --------------------
+          # 4) Filter facility affiliation and utilization files to selected NPIs
+          # --------------------
+          for source,outname in [
+              ("Facility_Affiliation.csv","cohort_affiliations.csv"),
+              ("Utilization.csv","cohort_utilization.csv")
+          ]:
+              src=os.path.join(ROOT,"tmp",source)
+              out=os.path.join(OBS,outname)
+              count=0
+              with open(src,"r",encoding="utf-8-sig",errors="replace",newline="") as fi, open(out,"w",encoding="utf-8",newline="") as fo:
+                  r=csv.DictReader(fi); w=csv.DictWriter(fo,fieldnames=r.fieldnames)
+                  w.writeheader()
+                  for row in r:
+                      if (row.get("NPI") or "").strip() in npi_set:
+                          w.writerow(row); count+=1
+
+          # --------------------
+          # 5) HCPCS reference set and geography context
+          # --------------------
+          agg=collections.defaultdict(lambda:{"Tot_Srvcs":Decimal("0"),"Tot_Benes":Decimal("0"),"Avg_Mdcr_Alowd_weighted":Decimal("0"),"weight":Decimal("0"),"desc":""})
+          for row in services:
+              code=(row.get("HCPCS_Cd") or "").strip()
+              if not code: continue
+              srv=d(row.get("Tot_Srvcs")); bene=d(row.get("Tot_Benes")); allowed=d(row.get("Avg_Mdcr_Alowd_Amt"))
+              a=agg[code]; a["Tot_Srvcs"]+=srv; a["Tot_Benes"]+=bene; a["Avg_Mdcr_Alowd_weighted"]+=allowed*srv; a["weight"]+=srv; a["desc"]=row.get("HCPCS_Desc") or a["desc"]
+          codes=sorted(agg,key=lambda c:(-agg[c]["Tot_Srvcs"],c))[:40]
+          hcpcs=[]
+          for code in codes:
+              a=agg[code]
+              hcpcs.append({
+                  "HCPCS_Cd":code,
+                  "HCPCS_Desc":a["desc"],
+                  "Cohort_Tot_Srvcs":str(a["Tot_Srvcs"]),
+                  "Cohort_Tot_Benes":str(a["Tot_Benes"]),
+                  "Cohort_Weighted_Avg_Mdcr_Allowed":str((a["Avg_Mdcr_Alowd_weighted"]/a["weight"]) if a["weight"] else Decimal("0")),
+                  "provenance":"OBSERVED_CMS_PROVIDER_SERVICE"
+              })
+          write_rows(os.path.join(OBS,"cohort_hcpcs_reference_codes.csv"),hcpcs)
+
+          geo=[]
+          for code in codes[:20]:
+              rows=api_rows(geography_id,{"HCPCS_Cd":code},size=5000)
+              geo.extend(rows)
+          write_rows(os.path.join(OBS,"cohort_geography_service.csv"),geo)
+
+          # --------------------
+          # 6) Derived deal-universe assignment for simulations
+          # --------------------
+          # This does not claim observed group ownership; it creates synthetic target groups
+          # while preserving the selected clinicians' observed public attributes.
+          by_spec=collections.defaultdict(list)
+          for row in selected:
+              by_spec[row["redwood_specialty"]].append(row)
+          group_rows=[]
+          clinician_group_rows=[]
+          for i,(spec,rows) in enumerate(sorted(by_spec.items()),1):
+              gid=f"RRG-{i:03d}"
+              states_present=sorted({r.get("State") for r in rows if r.get("State")})
+              group_rows.append({
+                  "derived_group_id":gid,
+                  "derived_group_name":f"Redwood Reference {spec} Group",
+                  "specialty":spec,
+                  "selected_clinician_count":len(rows),
+                  "states":"|".join(states_present),
+                  "provenance":"DERIVED_GROUPING_FOR_SIMULATION_ONLY"
+              })
+              for r in rows:
+                  clinician_group_rows.append({
+                      "derived_group_id":gid,
+                      "NPI":r.get("NPI"),
+                      "specialty":spec,
+                      "source_org_pac_id":r.get("org_pac_id"),
+                      "provenance":"DERIVED_GROUPING_FOR_SIMULATION_ONLY"
+                  })
+          write_rows(os.path.join(DER,"derived_reference_groups.csv"),group_rows)
+          write_rows(os.path.join(DER,"derived_reference_group_members.csv"),clinician_group_rows)
+
+          # --------------------
+          # 7) Control receipts and registry
+          # --------------------
+          source_registry=[
+              {"source":"CMS Doctors & Clinicians National Downloadable File","role":"clinician/group master","access":"temporary full download; bounded cohort retained","official_url":"https://data.cms.gov/provider-data/sites/default/files/resources/52c3f098d7e56028a298fd297cb0b38d_1787091341/DAC_NationalDownloadableFile.csv"},
+              {"source":"CMS Doctors & Clinicians Facility Affiliation","role":"facility affiliation","access":"temporary full download; selected NPIs retained","official_url":"https://data.cms.gov/provider-data/sites/default/files/resources/b7c4080ae144663e43353a9c35cd3f53_1787091342/Facility_Affiliation.csv"},
+              {"source":"CMS Doctors & Clinicians Utilization","role":"procedure-category utilization","access":"temporary full download; selected NPIs retained","official_url":"https://data.cms.gov/provider-data/sites/default/files/resources/72eedb23fcbe1ef3666f89db01b85e1d_1787091342/Utilization.csv"},
+              {"source":"Medicare Physician & Other Practitioners - by Provider","role":"provider economics","access":"CMS Data API filtered by selected NPI","official_url":"https://data.cms.gov/data-api/v1/dataset/"+provider_summary_id+"/data"},
+              {"source":"Medicare Physician & Other Practitioners - by Provider and Service","role":"service economics","access":"CMS Data API filtered by selected NPI","official_url":"https://data.cms.gov/data-api/v1/dataset/"+provider_service_id+"/data"},
+              {"source":"Medicare Physician & Other Practitioners - by Geography and Service","role":"geography/service context","access":"CMS Data API filtered by cohort HCPCS","official_url":"https://data.cms.gov/data-api/v1/dataset/"+geography_id+"/data"},
+              {"source":"Medicare FFS Public Provider Enrollment","role":"enrollment/organization context","access":"CMS Data API filtered by selected NPI","official_url":"https://data.cms.gov/data-api/v1/dataset/"+enrollment_id+"/data"},
+              {"source":"NPI Registry","role":"identity/taxonomy/location cross-check","access":"NPI Registry API by selected NPI","official_url":"https://npiregistry.cms.hhs.gov/api/"}
+          ]
+          write_rows(os.path.join(CTRL,"source_registry.csv"),source_registry)
+
+          receipt={
+              "version":"0.1",
+              "target_npis":target,
+              "actual_npis":len(npis),
+              "states":states,
+              "specialties":[x[0] for x in specialty_rules],
+              "minimum_reported_group_members":5,
+              "selection_rule":"For each specialty/state cell, choose lowest org_pac_id with >=2 unique qualifying NPIs, then lowest two NPIs; deterministic pool backfill to target.",
+              "selection_cells":selection_cells,
+              "selected_npis":npis,
+              "observed_provider_summary_rows":len(summaries),
+              "observed_provider_service_rows":len(services),
+              "observed_enrollment_rows":len(enrollments),
+              "observed_affiliation_file":"cohort_affiliations.csv",
+              "observed_utilization_file":"cohort_utilization.csv",
+              "top_hcpcs_count":len(codes)
+          }
+          with open(os.path.join(CTRL,"selection_receipt.json"),"w") as f: json.dump(receipt,f,indent=2,sort_keys=True)
+
+          semantics=[
+              {"file":"cohort_clinicians.csv","grain":"CMS Doctors & Clinicians clinician/location/enrollment-style row","status":"OBSERVED","notes":"May contain multiple rows per NPI; preserve source grain."},
+              {"file":"cohort_organizations.csv","grain":"Unique observed org_pac_id/location combination among selected clinician rows","status":"OBSERVED_DERIVATION","notes":"Built only from source fields; not an ownership assertion."},
+              {"file":"cohort_provider_summary.csv","grain":"NPI-level Medicare utilization/payment summary","status":"OBSERVED","notes":"Medicare FFS historical utilization, not total practice revenue."},
+              {"file":"cohort_provider_service.csv","grain":"NPI x HCPCS x place-of-service","status":"OBSERVED","notes":"Medicare FFS observed averages/counts, not fee schedule contract rates."},
+              {"file":"cohort_public_enrollment.csv","grain":"Public provider enrollment row","status":"OBSERVED","notes":"Enrollment identity/context; ORG_NAME may be blank for individuals."},
+              {"file":"cohort_npi_registry_summary.csv","grain":"NPI registry identity summary","status":"OBSERVED","notes":"Cross-source identity/taxonomy/location validation."},
+              {"file":"cohort_affiliations.csv","grain":"NPI x facility affiliation","status":"OBSERVED","notes":"Facility affiliation is not ownership."},
+              {"file":"cohort_utilization.csv","grain":"NPI x procedure category","status":"OBSERVED","notes":"Public utilization profile category, not transaction revenue."},
+              {"file":"derived_reference_groups.csv","grain":"Synthetic group","status":"DERIVED","notes":"Simulation-only grouping; never present as observed ownership."}
+          ]
+          write_rows(os.path.join(CTRL,"field_semantics.csv"),semantics)
+
+          # Hash every retained output.
+          hashes=[]
+          for base in [OBS,DER,CTRL]:
+              for name in sorted(os.listdir(base)):
+                  path=os.path.join(base,name)
+                  if not os.path.isfile(path) or name=="provenance_manifest.json": continue
+                  h=hashlib.sha256()
+                  with open(path,"rb") as f:
+                      for block in iter(lambda:f.read(1024*1024),b""): h.update(block)
+                  hashes.append({"relative_path":os.path.relpath(path,ROOT),"bytes":os.path.getsize(path),"sha256":h.hexdigest()})
+          with open(os.path.join(CTRL,"provenance_manifest.json"),"w") as f:
+              json.dump({"version":"0.1","files":hashes},f,indent=2,sort_keys=True)
+
+          with open(os.path.join(ROOT,"README.md"),"w") as f:
+              f.write("""# Redwood Real-World Reference Cohort v0.1
+
+Compact cross-linked public-data cohort for Redwood semantic and sustainability testing.
+
+Observed facts live under observed/.
+Simulation-only groupings live under derived/.
+Selection/source/hashes live under control/.
+
+This is not a representative sample of U.S. physicians and must not be used for market inference.
+""")
+          PY
+
+          rm -rf "$root/tmp"
+
+      - name: Upload compact cohort
+        uses: actions/upload-artifact@v4
+        with:
+          name: redwood-real-world-reference-cohort-v0-1
+          path: reference_cohort/
+          retention-days: 7
