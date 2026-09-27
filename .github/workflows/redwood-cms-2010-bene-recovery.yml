@@ -1,0 +1,54 @@
+name: Redwood CMS 2010 Beneficiary Recovery
+
+on:
+  push:
+    paths:
+      - ".github/workflows/redwood-cms-2010-bene-recovery.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download official CMS-linked file and verify Sample 1 identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          url="https://www.cms.gov/Research-Statistics-Data-and-Systems/Statistics-Trends-and-Reports/SynPUFs/Downloads/DE1_0_2010_Beneficiary_Summary_File_Sample_20.zip"
+          file="out/DE1_0_2010_Beneficiary_Summary_File_Sample_1.zip"
+          curl -fL --retry 5 --retry-delay 3 -A "Redwood-Research-Acquisition/0.4" -o "$file" "$url"
+          unzip -tq "$file"
+          unzip -Z1 "$file" > out/ZIP_CONTENTS.txt
+          cat out/ZIP_CONTENTS.txt
+          if ! grep -qi "DE1_0_2010_Beneficiary_Summary_File_Sample_1" out/ZIP_CONTENTS.txt; then
+            echo "CMS-linked ZIP does not identify its payload as Sample 1; refusing to accept." >&2
+            exit 9
+          fi
+          sha256sum "$file" > out/SHA256SUMS.txt
+          stat -c "%n %s bytes" "$file" > out/SIZE.txt
+          cat > out/PROVENANCE.md <<EOF
+          # CMS DE-SynPUF 2010 Beneficiary Sample 1 recovery
+
+          The current CMS Sample 1 download page links the 2010 Beneficiary Summary item to a URL whose basename says Sample_20.
+          OHDSI ETL-CMS documents this as a CMS website typo and uses that official CMS-linked URL as a workaround for Sample 1.
+          This acquisition is accepted only because the ZIP payload itself was verified to identify the enclosed file as Sample 1.
+
+          Official landing page:
+          https://www.cms.gov/data-research/statistics-trends-and-reports/medicare-claims-synthetic-public-use-files/cms-2008-2010-data-entrepreneurs-synthetic-public-use-file-de-synpuf/de10-sample-1
+
+          Official linked binary:
+          $url
+
+          GitHub run: $GITHUB_RUN_ID
+          Commit: $GITHUB_SHA
+          EOF
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cms-desynpuf-beneficiary-2010-sample1-recovered
+          path: out/
+          retention-days: 1
+          compression-level: 0
