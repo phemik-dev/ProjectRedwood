@@ -1,0 +1,159 @@
+name: Redwood Transaction Context Acquisition
+
+on:
+  push:
+    paths:
+      - ".github/workflows/redwood-transaction-context-acquisition.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  acquire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Acquire public ownership and transaction-context evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="transaction_context"
+          mkdir -p "$root/cms_chow" "$root/facilities" "$root/derived"
+
+          python3 - <<'PY'
+          import csv, io, json, os, re, urllib.request
+          root="transaction_context"
+
+          def req(url):
+              return urllib.request.Request(url,headers={"User-Agent":"Redwood-Research-Acquisition/0.6"})
+
+          def get(url):
+              with urllib.request.urlopen(req(url),timeout=180) as r: return r.read()
+
+          def save_url(url,path):
+              with urllib.request.urlopen(req(url),timeout=300) as r, open(path,"wb") as out:
+                  while True:
+                      b=r.read(1024*1024)
+                      if not b: break
+                      out.write(b)
+
+          def write_json(path,obj):
+              with open(path,"w",encoding="utf-8") as f: json.dump(obj,f,indent=2,sort_keys=True)
+
+          # A. CMS Change of Ownership dataset and all public resource files.
+          catalog=json.loads(get("https://data.cms.gov/data.json"))
+          matches=[x for x in catalog["dataset"] if "skilled nursing facility change of ownership" in str(x.get("title","")).lower()]
+          if matches:
+              ds=matches[0]
+              write_json(root+"/cms_chow/dataset_metadata.json",{
+                  "title":ds.get("title"),"identifier":ds.get("identifier"),"landingPage":ds.get("landingPage"),
+                  "modified":ds.get("modified"),"issued":ds.get("issued")
+              })
+              resource_records=[]
+              for d in ds.get("distribution",[]):
+                  if d.get("downloadURL"):
+                      resource_records.append({"name":d.get("title") or d.get("description") or "distribution",
+                                               "downloadURL":d.get("downloadURL"),
+                                               "format":d.get("format")})
+                  if d.get("resourcesAPI"):
+                      try:
+                          rj=json.loads(get(d["resourcesAPI"]))
+                          rr=rj if isinstance(rj,list) else rj.get("resources",rj.get("data",[]))
+                          for r in rr:
+                              if r.get("downloadURL"):
+                                  resource_records.append({"name":r.get("name") or "resource",
+                                                           "downloadURL":r.get("downloadURL"),
+                                                           "format":r.get("format")})
+                      except Exception as e:
+                          write_json(root+"/cms_chow/resources_api_error.json",{"error":str(e),"url":d["resourcesAPI"]})
+              seen=set()
+              acquired=[]
+              for idx,r in enumerate(resource_records):
+                  url=r["downloadURL"]
+                  if url in seen: continue
+                  seen.add(url)
+                  name=r.get("name") or os.path.basename(url.split("?")[0]) or ("resource_"+str(idx))
+                  ext=os.path.splitext(os.path.basename(url.split("?")[0]))[1]
+                  if not ext:
+                      fmt=str(r.get("format","")).lower()
+                      ext=".csv" if "csv" in fmt else (".pdf" if "pdf" in fmt else ".bin")
+                  safe=re.sub(r"[^A-Za-z0-9._-]+","_",name).strip("_")
+                  if not safe.lower().endswith(ext.lower()): safe += ext
+                  path=root+"/cms_chow/"+safe
+                  try:
+                      save_url(url,path)
+                      acquired.append({"name":name,"file_name":safe,"url":url,"bytes":os.path.getsize(path)})
+                  except Exception as e:
+                      acquired.append({"name":name,"file_name":safe,"url":url,"error":str(e)})
+              write_json(root+"/cms_chow/acquired_resources.json",acquired)
+          else:
+              write_json(root+"/cms_chow/not_found.json",{"searched":"Skilled Nursing Facility Change of Ownership"})
+
+          # B. Provider Data Catalog facility ownership/context files.
+          pitems=json.loads(get("https://data.cms.gov/provider-data/api/1/metastore/schemas/dataset/items"))
+          targets=[
+              ("Hospital General Information","hospital_general_information"),
+              ("Ambulatory Surgical Center Quality Measures - Facility","asc_quality_facility"),
+          ]
+          chosen=[]
+          for title,slug in targets:
+              mm=[x for x in pitems if x.get("title")==title]
+              if not mm: continue
+              x=mm[0]
+              d=next((z for z in x.get("distribution",[]) if z.get("mediaType")=="text/csv" and z.get("downloadURL")),None)
+              if not d: continue
+              path=root+"/facilities/"+slug+".csv"
+              save_url(d["downloadURL"],path)
+              chosen.append({"title":title,"slug":slug,"identifier":x.get("identifier"),
+                             "landingPage":x.get("landingPage"),"downloadURL":d.get("downloadURL"),
+                             "released":x.get("released"),"modified":x.get("modified"),
+                             "bytes":os.path.getsize(path)})
+              if d.get("describedBy"):
+                  try: save_url(d["describedBy"],root+"/facilities/"+slug+"__data_dictionary.pdf")
+                  except Exception: pass
+          write_json(root+"/facilities/source_register.json",chosen)
+
+          PY
+
+          # C. Structured public physician-practice transaction examples.
+          cat > "$root/derived/physician_practice_transaction_examples.csv" <<'EOF'
+          scenario_id,event_date,buyer,target,specialty,transaction_fact,value_usd,source_type,source_url,redwood_use
+          TXN-001,2025-01-02,Cencora,Retina Consultants of America,Retina ophthalmology,Completed acquisition described by VMG Health public market analysis,4600000000,VMG public analysis,https://vmghealth.com/insights/blog/a-new-buyer-in-physician-practice-ma-emerges/,ownership-change and strategic-buyer simulation
+          TXN-002,2024-11-01,SCA Health / Optum,OrthoAlliance,Orthopedics,Acquisition described by VMG Health public market analysis,1400000000,VMG public analysis,https://vmghealth.com/insights/blog/a-new-buyer-in-physician-practice-ma-emerges/,payer-linked strategic buyer and market-context simulation
+          TXN-003,2025-02-04,McKesson,PRISM Vision Holdings,Ophthalmology,Definitive agreement for 80 percent controlling interest described by VMG Health public market analysis,850000000,VMG public analysis,https://vmghealth.com/insights/blog/a-new-buyer-in-physician-practice-ma-emerges/,controlling-interest and specialty-platform simulation
+          TXN-004,,Regional health system,Large orthopedic practice,Orthopedics,Potential joint venture modeled through black-box managed-care reimbursement analysis,,VMG public case study,https://vmghealth.com/insights/blog/unlocking-revenue-potential-a-managed-care-reimbursement-analysis-case-study/,rate-change and pro-forma sensitivity simulation
+          TXN-005,,Private-equity-backed MSO,Large ophthalmology private practice,Ophthalmology,Buy-side diligence covering 30-plus eyecare physicians optical shops ASCs and multiple clinics,,VMG public case study,https://vmghealth.com/insights/blog/guiding-success-in-new-markets-ophthalmology-buy-side-due-diligence/,provider/site/service-line diligence simulation
+          EOF
+
+          cat > "$root/derived/licensed_or_restricted_targets.csv" <<'EOF'
+          source,status,reason,next_action
+          LevinPro HC,LICENSE_REQUIRED,Commercial healthcare acquisitions intelligence database,Obtain subscription or sanctioned export/trial
+          PitchBook,LICENSE_REQUIRED,Commercial private-market transaction database,Use only under licensed account/export terms
+          S&P Capital IQ,LICENSE_REQUIRED,Commercial transaction/financial database,Use only under licensed account/export terms
+          Definitive Healthcare,LICENSE_REQUIRED,Commercial healthcare market/provider intelligence,Use only under licensed account/export terms
+          X12 implementation guides / code content,REFERENCE_ONLY,Licensing and redistribution restrictions,Use licensed standards access; do not copy restricted content into corpus
+          Proprietary practitioner workpapers,CONSENT_REQUIRED,Confidential client and methodology material,Acquire sanitized examples under NDA/explicit permission
+          EOF
+
+          cat > "$root/README.md" <<'EOF'
+          # Redwood Transaction Context Pack
+
+          This pack separates observed public ownership/transaction evidence from derived simulation facts.
+
+          - cms_chow: public CMS change-of-ownership relational evidence when available.
+          - facilities: current CMS facility-level public context.
+          - derived/physician_practice_transaction_examples.csv: structured facts derived from public VMG Health case/market materials.
+          - derived/licensed_or_restricted_targets.csv: explicit non-acquired commercial/restricted sources.
+
+          The derived transaction rows are scenario seeds, not substitutes for a commercial M&A database.
+          EOF
+
+          find "$root" -type f -print0 | sort -z | xargs -0 sha256sum > "$root/SHA256SUMS.txt"
+
+      - name: Upload transaction context
+        uses: actions/upload-artifact@v4
+        with:
+          name: redwood-public-transaction-context
+          path: transaction_context/
+          retention-days: 1
