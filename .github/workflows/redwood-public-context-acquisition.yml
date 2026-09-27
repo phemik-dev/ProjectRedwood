@@ -1,0 +1,246 @@
+name: Redwood Public Context Acquisition
+
+on:
+  push:
+    paths:
+      - ".github/workflows/redwood-public-context-acquisition.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  acquire-context:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Acquire provider, utilization, rate and enrollment context
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="context"
+          mkdir -p "$root/provider_catalog" "$root/nppes" "$root/pfs" "$root/enrollment"
+
+          python3 - <<'PY'
+          import csv, io, json, os, re, urllib.request
+          from html.parser import HTMLParser
+          root="context"
+
+          def get(url):
+              req=urllib.request.Request(url, headers={"User-Agent":"Redwood-Research-Acquisition/0.4"})
+              with urllib.request.urlopen(req, timeout=120) as r:
+                  return r.read()
+
+          def write_json(path,obj):
+              with open(path,"w",encoding="utf-8") as f:
+                  json.dump(obj,f,indent=2,sort_keys=True)
+
+          # 1. Provider Data Catalog: exact current datasets.
+          meta_url="https://data.cms.gov/provider-data/api/1/metastore/schemas/dataset/items"
+          items=json.loads(get(meta_url))
+          wanted=[
+              ("National Downloadable File","doctors_clinicians_national"),
+              ("Facility Affiliation Data","facility_affiliation"),
+              ("Utilization Data","doctors_clinicians_utilization"),
+          ]
+          selected=[]
+          for title,slug in wanted:
+              matches=[x for x in items if x.get("title")==title and "Doctors and clinicians" in x.get("theme",[])]
+              if not matches:
+                  raise RuntimeError("Missing Provider Data Catalog title: "+title)
+              x=matches[0]
+              dist=next((d for d in x.get("distribution",[]) if d.get("mediaType")=="text/csv" and d.get("downloadURL")),None)
+              if not dist:
+                  raise RuntimeError("No CSV distribution for "+title)
+              selected.append({
+                  "slug":slug,
+                  "title":title,
+                  "identifier":x.get("identifier"),
+                  "released":x.get("released"),
+                  "modified":x.get("modified"),
+                  "landingPage":x.get("landingPage"),
+                  "downloadURL":dist.get("downloadURL"),
+                  "describedBy":dist.get("describedBy"),
+              })
+          write_json(root+"/provider_catalog/provider_datasets.json",selected)
+
+          # Save deterministic bounded CSV samples without loading huge national files.
+          for x in selected:
+              raw=get(x["downloadURL"])
+              # Provider catalog CSVs are manageable enough for a bounded stream; keep header + first 10k data rows.
+              textdata=raw.decode("utf-8-sig",errors="replace")
+              lines=textdata.splitlines()
+              sample="\n".join(lines[:10001])+"\n"
+              with open(root+"/provider_catalog/"+x["slug"]+"__first_10000_rows.csv","w",encoding="utf-8",newline="") as f:
+                  f.write(sample)
+              if x.get("describedBy"):
+                  try:
+                      with open(root+"/provider_catalog/"+x["slug"]+"__data_dictionary.pdf","wb") as f:
+                          f.write(get(x["describedBy"]))
+                  except Exception as e:
+                      with open(root+"/provider_catalog/"+x["slug"]+"__dictionary_error.txt","w") as f:
+                          f.write(str(e))
+
+          # 2. NPPES latest weekly incremental V2 file.
+          class LinkParser(HTMLParser):
+              def __init__(self):
+                  super().__init__(); self.href=None; self.links=[]
+              def handle_starttag(self,tag,attrs):
+                  if tag=="a": self.href=dict(attrs).get("href")
+              def handle_data(self,data):
+                  if self.href and data.strip():
+                      self.links.append((data.strip(),self.href))
+              def handle_endtag(self,tag):
+                  if tag=="a": self.href=None
+
+          nppes_page="https://download.cms.gov/nppes/NPI_Files.html"
+          html=get(nppes_page).decode("utf-8",errors="replace")
+          p=LinkParser(); p.feed(html)
+          weekly=[(txt,href) for txt,href in p.links if "Weekly Update" in txt and "V.2" in txt]
+          if not weekly:
+              # fallback: links with weekly-looking date ranges / zip
+              weekly=[(txt,href) for txt,href in p.links if re.search(r"\d{6}_\d{6}",txt) and ".zip" in href.lower()]
+          if not weekly:
+              raise RuntimeError("Could not discover current NPPES weekly incremental link")
+          txt,href=weekly[-1]
+          if href.startswith("/"): href="https://download.cms.gov"+href
+          elif not href.startswith("http"): href="https://download.cms.gov/nppes/"+href
+          nppes_bytes=get(href)
+          nppes_name=os.path.basename(href.split("?")[0]) or "nppes_weekly.zip"
+          with open(root+"/nppes/"+nppes_name,"wb") as f: f.write(nppes_bytes)
+          write_json(root+"/nppes/source.json",{"anchor":txt,"url":href,"file_name":nppes_name})
+
+          # 3. CMS Provider Enrollment: main and reassignment data.
+          cms_catalog=json.loads(get("https://data.cms.gov/data.json"))
+          ds=next(x for x in cms_catalog["dataset"] if x.get("title")=="Medicare Fee-For-Service Public Provider Enrollment")
+          write_json(root+"/enrollment/dataset_metadata.json",{
+              "title":ds.get("title"),"identifier":ds.get("identifier"),"landingPage":ds.get("landingPage"),
+              "modified":ds.get("modified"),"distribution_count":len(ds.get("distribution",[]))
+          })
+          # Latest public CSV distribution for main file.
+          csv_d=[d for d in ds.get("distribution",[]) if str(d.get("format","")).upper()=="CSV" and d.get("downloadURL")]
+          if csv_d:
+              url=csv_d[0]["downloadURL"]
+              raw=get(url).decode("utf-8-sig",errors="replace").splitlines()
+              with open(root+"/enrollment/public_provider_enrollment__first_10000_rows.csv","w",encoding="utf-8") as f:
+                  f.write("\n".join(raw[:10001])+"\n")
+              write_json(root+"/enrollment/main_source.json",{"url":url})
+          # Resources API often exposes Address / Reassignment / Secondary Specialty subfiles.
+          api_d=[d for d in ds.get("distribution",[]) if str(d.get("format","")).upper()=="API" and d.get("resourcesAPI")]
+          if api_d:
+              res=json.loads(get(api_d[0]["resourcesAPI"]))
+              write_json(root+"/enrollment/resources.json",res)
+              resources=res if isinstance(res,list) else res.get("resources",res.get("data",[]))
+              for rr in resources:
+                  name=str(rr.get("name",""))
+                  dl=rr.get("downloadURL")
+                  if dl and any(k in name.lower() for k in ["reassignment","address","secondary specialty","additional npi"]):
+                      safe=re.sub(r"[^A-Za-z0-9._-]+","_",name).strip("_")
+                      try:
+                          raw=get(dl).decode("utf-8-sig",errors="replace").splitlines()
+                          with open(root+"/enrollment/"+safe+"__first_10000_rows.csv","w",encoding="utf-8") as f:
+                              f.write("\n".join(raw[:10001])+"\n")
+                      except Exception as e:
+                          with open(root+"/enrollment/"+safe+"__error.txt","w") as f: f.write(str(e))
+
+          PY
+
+          # 4. Medicare Physician Fee Schedule files. Discover current official links from CMS pages.
+          python3 - <<'PY'
+          import json, os, re, urllib.parse, urllib.request
+          from html.parser import HTMLParser
+          root="context/pfs"
+          os.makedirs(root,exist_ok=True)
+          class P(HTMLParser):
+              def __init__(self): super().__init__(); self.links=[]; self.href=None; self.txt=[]
+              def handle_starttag(self,t,a):
+                  if t=="a": self.href=dict(a).get("href"); self.txt=[]
+              def handle_data(self,d):
+                  if self.href is not None: self.txt.append(d)
+              def handle_endtag(self,t):
+                  if t=="a" and self.href:
+                      self.links.append((" ".join(self.txt).strip(),self.href)); self.href=None
+          def page(url):
+              req=urllib.request.Request(url,headers={"User-Agent":"Redwood-Research-Acquisition/0.4"})
+              return urllib.request.urlopen(req,timeout=120).read().decode("utf-8",errors="replace")
+          def dl(url,path):
+              req=urllib.request.Request(url,headers={"User-Agent":"Redwood-Research-Acquisition/0.4"})
+              with urllib.request.urlopen(req,timeout=300) as r, open(path,"wb") as f:
+                  while True:
+                      b=r.read(1024*1024)
+                      if not b: break
+                      f.write(b)
+          sources=[]
+          pages=[
+              ("all_states_2026","https://www.cms.gov/medicare/payment/fee-schedules/physician/carrier-specific-files/all-states-2026"),
+              ("pfrev26c","https://www.cms.gov/medicare/payment/fee-schedules/physician/national-payment-amount-file/pfrev26c"),
+              ("rvu26c","https://www.cms.gov/medicare/payment/fee-schedules/physician/pfs-relative-value-files/rvu26c"),
+          ]
+          for label,url in pages:
+              p=P(); p.feed(page(url))
+              candidates=[]
+              for txt,href in p.links:
+                  h=href.lower()
+                  if label=="all_states_2026" and ("carrier" in h and "2026" in h and (h.endswith(".zip") or "/files/zip/" in h)):
+                      candidates.append((txt,href))
+                  elif label=="pfrev26c" and ("pfrev26c" in h and (h.endswith(".zip") or "/files/zip/" in h)):
+                      candidates.append((txt,href))
+                  elif label=="rvu26c" and ("rvu26c" in h and (h.endswith(".zip") or "/files/zip/" in h)):
+                      candidates.append((txt,href))
+              for txt,href in candidates:
+                  full=urllib.parse.urljoin(url,href)
+                  name=os.path.basename(urllib.parse.urlparse(full).path)
+                  if not name: continue
+                  dest=os.path.join(root,name)
+                  if not os.path.exists(dest):
+                      dl(full,dest)
+                  sources.append({"page":url,"anchor":txt,"url":full,"file_name":name})
+          with open(root+"/sources.json","w") as f: json.dump(sources,f,indent=2)
+          PY
+
+          # Hash every acquired file.
+          find "$root" -type f -print0 | sort -z | xargs -0 sha256sum > "$root/SHA256SUMS.txt"
+          {
+            echo "# Redwood public provider/rate context acquisition"
+            echo
+            echo "Observed public source files and deterministic bounded samples."
+            echo "Provider samples are not evidence of FTE, contract rates, or complete practice economics."
+            echo "NPPES issuance does not establish licensure/credentialing."
+            echo "PFS files are Medicare reference economics, not commercial payer contracts."
+            echo
+            echo "Run: $GITHUB_RUN_ID"
+            echo "Commit: $GITHUB_SHA"
+          } > "$root/README.md"
+
+      - name: Upload provider catalog samples
+        uses: actions/upload-artifact@v4
+        with:
+          name: redwood-provider-catalog-context
+          path: |
+            context/provider_catalog/
+            context/README.md
+            context/SHA256SUMS.txt
+          retention-days: 1
+
+      - name: Upload NPPES weekly
+        uses: actions/upload-artifact@v4
+        with:
+          name: redwood-nppes-weekly
+          path: context/nppes/
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload PFS rate files
+        uses: actions/upload-artifact@v4
+        with:
+          name: redwood-cms-pfs-2026
+          path: context/pfs/
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload provider enrollment samples
+        uses: actions/upload-artifact@v4
+        with:
+          name: redwood-pecos-provider-enrollment
+          path: context/enrollment/
+          retention-days: 1
