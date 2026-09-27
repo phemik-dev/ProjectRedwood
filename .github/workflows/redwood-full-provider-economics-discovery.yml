@@ -1,0 +1,162 @@
+name: Redwood Full Provider Economics Discovery
+
+on:
+  push:
+    paths:
+      - ".github/workflows/redwood-full-provider-economics-discovery.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Resolve current source URLs and sizes
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p provider_economics_discovery
+          python3 - <<'PY'
+          import csv, json, re, urllib.request, urllib.parse
+          from html.parser import HTMLParser
+
+          UA={"User-Agent":"Redwood-Research-Acquisition/0.9"}
+          OUT="provider_economics_discovery"
+
+          def get(url,timeout=180):
+              req=urllib.request.Request(url,headers=UA)
+              with urllib.request.urlopen(req,timeout=timeout) as r:
+                  return r.read()
+
+          def norm(s):
+              return re.sub(r"[^a-z0-9]+"," ",str(s or "").lower()).strip()
+
+          def probe_size(url):
+              # Prefer HEAD; fall back to a one-byte ranged GET.
+              try:
+                  req=urllib.request.Request(url,headers=UA,method="HEAD")
+                  with urllib.request.urlopen(req,timeout=120) as r:
+                      length=r.headers.get("Content-Length")
+                      if length:
+                          return int(length),str(r.geturl())
+              except Exception:
+                  pass
+              try:
+                  headers=dict(UA); headers["Range"]="bytes=0-0"
+                  req=urllib.request.Request(url,headers=headers)
+                  with urllib.request.urlopen(req,timeout=120) as r:
+                      cr=r.headers.get("Content-Range")
+                      if cr and "/" in cr:
+                          return int(cr.split("/")[-1]),str(r.geturl())
+                      length=r.headers.get("Content-Length")
+                      return (int(length) if length else None),str(r.geturl())
+              except Exception as e:
+                  return None,url
+
+          def choose_csv(ds):
+              choices=[]
+              for d in ds.get("distribution",[]) or []:
+                  url=d.get("downloadURL")
+                  if not url: continue
+                  p=" ".join([norm(d.get("format")),norm(d.get("mediaType")),norm(d.get("title")),norm(url)])
+                  if "csv" in p or url.lower().split("?")[0].endswith(".zip"):
+                      choices.append(d)
+              return choices[0] if choices else None
+
+          rows=[]
+
+          # A. Provider Data Catalog
+          pitems=json.loads(get("https://data.cms.gov/provider-data/api/1/metastore/schemas/dataset/items"))
+          provider_targets=[
+              ("doctors_clinicians_national","National Downloadable File"),
+              ("facility_affiliation","Facility Affiliation Data"),
+              ("doctors_clinicians_utilization","Utilization Data"),
+          ]
+          for slug,title in provider_targets:
+              matches=[x for x in pitems if x.get("title")==title and "Doctors and clinicians" in (x.get("theme") or [])]
+              if not matches:
+                  rows.append({"slug":slug,"catalog":"provider-data","status":"NOT_FOUND","title_query":title})
+                  continue
+              ds=matches[0]; d=choose_csv(ds)
+              if not d:
+                  rows.append({"slug":slug,"catalog":"provider-data","status":"NO_DOWNLOAD","title":ds.get("title"),"identifier":ds.get("identifier")})
+                  continue
+              size,final=probe_size(d["downloadURL"])
+              rows.append({"slug":slug,"catalog":"provider-data","status":"RESOLVED","title":ds.get("title"),"identifier":ds.get("identifier"),"modified":ds.get("modified"),"landingPage":ds.get("landingPage"),"downloadURL":d.get("downloadURL"),"finalURL":final,"bytes":size,"describedBy":d.get("describedBy")})
+
+          # B. data.cms.gov national utilization / enrollment
+          catalog=json.loads(get("https://data.cms.gov/data.json"))
+          datasets=catalog.get("dataset",[])
+          cms_targets=[
+              ("physician_by_provider",["medicare physician","other practitioners","by provider"],["service"]),
+              ("physician_by_provider_service",["medicare physician","other practitioners","by provider","service"],[]),
+              ("physician_by_geography_service",["medicare physician","other practitioners","by geography","service"],[]),
+              ("public_provider_enrollment",["public provider enrollment"],[]),
+          ]
+          for slug,must,exclude in cms_targets:
+              cand=[]
+              for ds in datasets:
+                  t=norm(ds.get("title"))
+                  if all(norm(k) in t for k in must) and not any(norm(k) in t for k in exclude):
+                      cand.append(ds)
+              cand.sort(key=lambda x:(str(x.get("modified") or ""),str(x.get("title") or "")),reverse=True)
+              if not cand:
+                  rows.append({"slug":slug,"catalog":"data.cms.gov","status":"NOT_FOUND","title_query":" | ".join(must)})
+                  continue
+              ds=cand[0]; d=choose_csv(ds)
+              if not d:
+                  rows.append({"slug":slug,"catalog":"data.cms.gov","status":"NO_DOWNLOAD","title":ds.get("title"),"identifier":ds.get("identifier")})
+                  continue
+              size,final=probe_size(d["downloadURL"])
+              rows.append({"slug":slug,"catalog":"data.cms.gov","status":"RESOLVED","title":ds.get("title"),"identifier":ds.get("identifier"),"modified":ds.get("modified"),"landingPage":ds.get("landingPage"),"downloadURL":d.get("downloadURL"),"finalURL":final,"bytes":size,"describedBy":d.get("describedBy"),"resourcesAPI":d.get("resourcesAPI")})
+
+          # C. NPPES current full monthly V2 replacement file
+          class P(HTMLParser):
+              def __init__(self): super().__init__(); self.href=None; self.buf=[]; self.links=[]
+              def handle_starttag(self,t,a):
+                  if t=="a": self.href=dict(a).get("href"); self.buf=[]
+              def handle_data(self,d):
+                  if self.href is not None: self.buf.append(d)
+              def handle_endtag(self,t):
+                  if t=="a" and self.href:
+                      self.links.append((" ".join(self.buf).strip(),self.href))
+                      self.href=None; self.buf=[]
+
+          nppes_page="https://download.cms.gov/nppes/NPI_Files.html"
+          html=get(nppes_page).decode("utf-8",errors="replace")
+          p=P(); p.feed(html)
+          nppes=[]
+          for txt,href in p.links:
+              low=(txt+" "+str(href)).lower()
+              if ".zip" in low and ("monthly" in low or "full replacement" in low) and ("v.2" in low or "v2" in low or "npidata" in low):
+                  full=urllib.parse.urljoin(nppes_page,href)
+                  nppes.append((txt,full))
+          # Favor the first full replacement V2 link on the current page.
+          if nppes:
+              txt,url=nppes[0]
+              size,final=probe_size(url)
+              rows.append({"slug":"nppes_full_monthly_v2","catalog":"NPPES","status":"RESOLVED","title":txt,"landingPage":nppes_page,"downloadURL":url,"finalURL":final,"bytes":size})
+          else:
+              rows.append({"slug":"nppes_full_monthly_v2","catalog":"NPPES","status":"NOT_FOUND"})
+
+          with open(OUT+"/DISCOVERY.json","w",encoding="utf-8") as f:
+              json.dump(rows,f,indent=2,sort_keys=True)
+
+          fields=["slug","catalog","status","title","identifier","modified","bytes","landingPage","downloadURL","finalURL","describedBy","resourcesAPI","title_query"]
+          with open(OUT+"/DISCOVERY.csv","w",encoding="utf-8",newline="") as f:
+              w=csv.DictWriter(f,fieldnames=fields,extrasaction="ignore")
+              w.writeheader(); w.writerows(rows)
+
+          with open(OUT+"/README.md","w") as f:
+              f.write("# Redwood full provider economics discovery\n\n")
+              f.write("This receipt resolves current public source URLs and approximate source byte sizes before full acquisition. No source is marked possessed here.\n")
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: redwood-full-provider-economics-discovery
+          path: provider_economics_discovery/
+          retention-days: 1
