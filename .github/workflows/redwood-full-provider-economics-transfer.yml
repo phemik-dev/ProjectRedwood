@@ -1,0 +1,1119 @@
+name: Redwood Full Provider Economics Transfer
+
+on:
+  push:
+    paths:
+      - ".github/workflows/redwood-full-provider-economics-transfer.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  acquire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Download hash fixture and split full public sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="provider_economics_transfer"
+          mkdir -p "$root/raw" "$root/chunks" "$root/fixtures" "$root/dictionaries"
+
+          cat > "$root/SOURCES.tsv" <<'EOF'
+          logical_name	file_name	official_url	dictionary_url
+          doctors_clinicians_national	DAC_NationalDownloadableFile.csv	https://data.cms.gov/provider-data/sites/default/files/resources/52c3f098d7e56028a298fd297cb0b38d_1787091341/DAC_NationalDownloadableFile.csv	https://data.cms.gov/provider-data/sites/default/files/data_dictionaries/physician/DOC_Data_Dictionary.pdf
+          facility_affiliation	Facility_Affiliation.csv	https://data.cms.gov/provider-data/sites/default/files/resources/b7c4080ae144663e43353a9c35cd3f53_1787091342/Facility_Affiliation.csv	https://data.cms.gov/provider-data/sites/default/files/data_dictionaries/physician/DOC_Data_Dictionary.pdf
+          doctors_clinicians_utilization	Utilization.csv	https://data.cms.gov/provider-data/sites/default/files/resources/72eedb23fcbe1ef3666f89db01b85e1d_1787091342/Utilization.csv	https://data.cms.gov/provider-data/sites/default/files/data_dictionaries/physician/DOC_Data_Dictionary.pdf
+          physician_by_provider	MUP_PHY_R26_P05_V10_D24_Prov.csv	https://data.cms.gov/sites/default/files/2026-05/7323ba02-52e7-4a86-b2ce-ad210c25d9aa/MUP_PHY_R26_P05_V10_D24_Prov.csv	https://data.cms.gov/data-api/v1/dataset/4d0b2df0-1e99-4db7-a574-a571d99217f1/dictionary
+          physician_by_provider_service	PHY_R26_P05_V10_D24_Prov_Svc.csv	https://data.cms.gov/sites/default/files/2026-05/b5ebab5a-f490-418a-9bce-4b9f31419356/PHY_R26_P05_V10_D24_Prov_Svc.csv	https://data.cms.gov/data-api/v1/dataset/335e5f35-eca6-482d-87b3-f99883e213e3/dictionary
+          physician_by_geography_service	MUP_PHY_R26_P05_V10_D24_Geo.csv	https://data.cms.gov/sites/default/files/2026-05/e534c74b-79b8-4892-8a95-5a17e2dfec9f/MUP_PHY_R26_P05_V10_D24_Geo.csv	https://data.cms.gov/data-api/v1/dataset/0c75b0b3-b40f-4007-a5ac-f9f2fed95862/dictionary
+          public_provider_enrollment	PPEF_Enrollment_Extract_2026.07.17.csv	https://data.cms.gov/sites/default/files/2026-07/9c89bdde-66b6-4fb9-8c2f-a96cbb3859ba/PPEF_Enrollment_Extract_2026.07.17.csv	https://data.cms.gov/data-api/v1/dataset/903dcfa5-4924-4775-8676-4fa0f6a8aee9/dictionary
+          nppes_full_monthly_v2	NPPES_Data_Dissemination_September_2026_V2.zip	https://download.cms.gov/nppes/NPPES_Data_Dissemination_September_2026_V2.zip	
+          EOF
+
+          printf "logical_name\tfile_name\tbytes\tsha256\tofficial_url\n" > "$root/RAW_MANIFEST.tsv"
+          printf "logical_name\tchunk_name\tchunk_bytes\tchunk_sha256\n" > "$root/CHUNK_MANIFEST.tsv"
+
+          tail -n +2 "$root/SOURCES.tsv" | while IFS=$'\t' read -r logical name url dict; do
+            echo "::group::Acquire $logical"
+            curl -fL --retry 6 --retry-delay 5 --connect-timeout 30 --max-time 2400 -A "Redwood-Research-Acquisition/1.0" -o "$root/raw/$name" "$url"
+
+            bytes=$(stat -c%s "$root/raw/$name")
+            hash=$(sha256sum "$root/raw/$name" | awk '{print $1}')
+            printf "%s\t%s\t%s\t%s\t%s\n" "$logical" "$name" "$bytes" "$hash" "$url" >> "$root/RAW_MANIFEST.tsv"
+
+            case "$name" in
+              *.csv)
+                head -n 10001 "$root/raw/$name" > "$root/fixtures/$logical.first_10000_rows.csv" || true
+                ;;
+            esac
+
+            if [ -n "$dict" ]; then
+              curl -fL --retry 3 --connect-timeout 20 --max-time 300 -A "Redwood-Research-Acquisition/1.0" -o "$root/dictionaries/$logical.dictionary" "$dict" || true
+            fi
+
+            mkdir -p "$root/chunks/$logical"
+            split -b 60M -d -a 3 "$root/raw/$name" "$root/chunks/$logical/$logical.part."
+            for part in "$root/chunks/$logical"/*; do
+              pbase=$(basename "$part")
+              pbytes=$(stat -c%s "$part")
+              phash=$(sha256sum "$part" | awk '{print $1}')
+              printf "%s\t%s\t%s\t%s\n" "$logical" "$pbase" "$pbytes" "$phash" >> "$root/CHUNK_MANIFEST.tsv"
+            done
+            rm -f "$root/raw/$name"
+            echo "::endgroup::"
+          done
+
+          cat > "$root/REASSEMBLY.md" <<'EOF'
+          # Redwood full provider economics reassembly
+
+          Every part is an unchanged byte-range fragment of the named official source file.
+          Concatenate parts for a logical source in lexical order, then verify the result against RAW_MANIFEST.tsv.
+
+          Example:
+          cat chunks/doctors_clinicians_national/doctors_clinicians_national.part.* > DAC_NationalDownloadableFile.csv
+
+          The fixtures directory is derived for immediate ingestion tests. The chunks directory is physical custody of the full original sources.
+          EOF
+
+      - name: Upload manifests dictionaries and fixtures
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-control-fixtures
+          path: |
+            provider_economics_transfer/SOURCES.tsv
+            provider_economics_transfer/RAW_MANIFEST.tsv
+            provider_economics_transfer/CHUNK_MANIFEST.tsv
+            provider_economics_transfer/REASSEMBLY.md
+            provider_economics_transfer/fixtures/
+            provider_economics_transfer/dictionaries/
+          retention-days: 1
+
+      - name: Upload doctors_clinicians_national part 000
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-doctors_clinicians_national-part-000
+          path: provider_economics_transfer/chunks/doctors_clinicians_national/doctors_clinicians_national.part.000
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload doctors_clinicians_national part 001
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-doctors_clinicians_national-part-001
+          path: provider_economics_transfer/chunks/doctors_clinicians_national/doctors_clinicians_national.part.001
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload doctors_clinicians_national part 002
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-doctors_clinicians_national-part-002
+          path: provider_economics_transfer/chunks/doctors_clinicians_national/doctors_clinicians_national.part.002
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload doctors_clinicians_national part 003
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-doctors_clinicians_national-part-003
+          path: provider_economics_transfer/chunks/doctors_clinicians_national/doctors_clinicians_national.part.003
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload doctors_clinicians_national part 004
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-doctors_clinicians_national-part-004
+          path: provider_economics_transfer/chunks/doctors_clinicians_national/doctors_clinicians_national.part.004
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload doctors_clinicians_national part 005
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-doctors_clinicians_national-part-005
+          path: provider_economics_transfer/chunks/doctors_clinicians_national/doctors_clinicians_national.part.005
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload doctors_clinicians_national part 006
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-doctors_clinicians_national-part-006
+          path: provider_economics_transfer/chunks/doctors_clinicians_national/doctors_clinicians_national.part.006
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload doctors_clinicians_national part 007
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-doctors_clinicians_national-part-007
+          path: provider_economics_transfer/chunks/doctors_clinicians_national/doctors_clinicians_national.part.007
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload doctors_clinicians_national part 008
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-doctors_clinicians_national-part-008
+          path: provider_economics_transfer/chunks/doctors_clinicians_national/doctors_clinicians_national.part.008
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload doctors_clinicians_national part 009
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-doctors_clinicians_national-part-009
+          path: provider_economics_transfer/chunks/doctors_clinicians_national/doctors_clinicians_national.part.009
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload doctors_clinicians_national part 010
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-doctors_clinicians_national-part-010
+          path: provider_economics_transfer/chunks/doctors_clinicians_national/doctors_clinicians_national.part.010
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload doctors_clinicians_national part 011
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-doctors_clinicians_national-part-011
+          path: provider_economics_transfer/chunks/doctors_clinicians_national/doctors_clinicians_national.part.011
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload doctors_clinicians_national part 012
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-doctors_clinicians_national-part-012
+          path: provider_economics_transfer/chunks/doctors_clinicians_national/doctors_clinicians_national.part.012
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload doctors_clinicians_national part 013
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-doctors_clinicians_national-part-013
+          path: provider_economics_transfer/chunks/doctors_clinicians_national/doctors_clinicians_national.part.013
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload facility_affiliation part 000
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-facility_affiliation-part-000
+          path: provider_economics_transfer/chunks/facility_affiliation/facility_affiliation.part.000
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload facility_affiliation part 001
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-facility_affiliation-part-001
+          path: provider_economics_transfer/chunks/facility_affiliation/facility_affiliation.part.001
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload facility_affiliation part 002
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-facility_affiliation-part-002
+          path: provider_economics_transfer/chunks/facility_affiliation/facility_affiliation.part.002
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload doctors_clinicians_utilization part 000
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-doctors_clinicians_utilization-part-000
+          path: provider_economics_transfer/chunks/doctors_clinicians_utilization/doctors_clinicians_utilization.part.000
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider part 000
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider-part-000
+          path: provider_economics_transfer/chunks/physician_by_provider/physician_by_provider.part.000
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider part 001
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider-part-001
+          path: provider_economics_transfer/chunks/physician_by_provider/physician_by_provider.part.001
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider part 002
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider-part-002
+          path: provider_economics_transfer/chunks/physician_by_provider/physician_by_provider.part.002
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider part 003
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider-part-003
+          path: provider_economics_transfer/chunks/physician_by_provider/physician_by_provider.part.003
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider part 004
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider-part-004
+          path: provider_economics_transfer/chunks/physician_by_provider/physician_by_provider.part.004
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider part 005
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider-part-005
+          path: provider_economics_transfer/chunks/physician_by_provider/physician_by_provider.part.005
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider part 006
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider-part-006
+          path: provider_economics_transfer/chunks/physician_by_provider/physician_by_provider.part.006
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider part 007
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider-part-007
+          path: provider_economics_transfer/chunks/physician_by_provider/physician_by_provider.part.007
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider part 008
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider-part-008
+          path: provider_economics_transfer/chunks/physician_by_provider/physician_by_provider.part.008
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 000
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-000
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.000
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 001
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-001
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.001
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 002
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-002
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.002
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 003
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-003
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.003
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 004
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-004
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.004
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 005
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-005
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.005
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 006
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-006
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.006
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 007
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-007
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.007
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 008
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-008
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.008
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 009
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-009
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.009
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 010
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-010
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.010
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 011
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-011
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.011
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 012
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-012
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.012
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 013
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-013
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.013
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 014
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-014
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.014
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 015
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-015
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.015
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 016
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-016
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.016
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 017
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-017
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.017
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 018
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-018
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.018
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 019
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-019
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.019
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 020
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-020
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.020
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 021
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-021
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.021
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 022
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-022
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.022
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 023
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-023
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.023
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 024
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-024
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.024
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 025
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-025
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.025
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 026
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-026
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.026
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 027
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-027
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.027
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 028
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-028
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.028
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 029
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-029
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.029
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 030
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-030
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.030
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 031
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-031
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.031
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 032
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-032
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.032
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 033
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-033
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.033
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 034
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-034
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.034
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 035
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-035
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.035
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 036
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-036
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.036
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 037
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-037
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.037
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 038
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-038
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.038
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 039
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-039
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.039
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 040
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-040
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.040
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 041
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-041
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.041
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 042
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-042
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.042
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 043
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-043
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.043
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 044
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-044
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.044
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 045
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-045
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.045
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 046
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-046
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.046
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 047
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-047
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.047
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 048
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-048
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.048
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 049
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-049
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.049
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 050
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-050
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.050
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_provider_service part 051
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_provider_service-part-051
+          path: provider_economics_transfer/chunks/physician_by_provider_service/physician_by_provider_service.part.051
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_geography_service part 000
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_geography_service-part-000
+          path: provider_economics_transfer/chunks/physician_by_geography_service/physician_by_geography_service.part.000
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_geography_service part 001
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_geography_service-part-001
+          path: provider_economics_transfer/chunks/physician_by_geography_service/physician_by_geography_service.part.001
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_geography_service part 002
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_geography_service-part-002
+          path: provider_economics_transfer/chunks/physician_by_geography_service/physician_by_geography_service.part.002
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_geography_service part 003
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_geography_service-part-003
+          path: provider_economics_transfer/chunks/physician_by_geography_service/physician_by_geography_service.part.003
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_geography_service part 004
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_geography_service-part-004
+          path: provider_economics_transfer/chunks/physician_by_geography_service/physician_by_geography_service.part.004
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_geography_service part 005
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_geography_service-part-005
+          path: provider_economics_transfer/chunks/physician_by_geography_service/physician_by_geography_service.part.005
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_geography_service part 006
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_geography_service-part-006
+          path: provider_economics_transfer/chunks/physician_by_geography_service/physician_by_geography_service.part.006
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_geography_service part 007
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_geography_service-part-007
+          path: provider_economics_transfer/chunks/physician_by_geography_service/physician_by_geography_service.part.007
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_geography_service part 008
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_geography_service-part-008
+          path: provider_economics_transfer/chunks/physician_by_geography_service/physician_by_geography_service.part.008
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload physician_by_geography_service part 009
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-physician_by_geography_service-part-009
+          path: provider_economics_transfer/chunks/physician_by_geography_service/physician_by_geography_service.part.009
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload public_provider_enrollment part 000
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-public_provider_enrollment-part-000
+          path: provider_economics_transfer/chunks/public_provider_enrollment/public_provider_enrollment.part.000
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload public_provider_enrollment part 001
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-public_provider_enrollment-part-001
+          path: provider_economics_transfer/chunks/public_provider_enrollment/public_provider_enrollment.part.001
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload public_provider_enrollment part 002
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-public_provider_enrollment-part-002
+          path: provider_economics_transfer/chunks/public_provider_enrollment/public_provider_enrollment.part.002
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload public_provider_enrollment part 003
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-public_provider_enrollment-part-003
+          path: provider_economics_transfer/chunks/public_provider_enrollment/public_provider_enrollment.part.003
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload public_provider_enrollment part 004
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-public_provider_enrollment-part-004
+          path: provider_economics_transfer/chunks/public_provider_enrollment/public_provider_enrollment.part.004
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload public_provider_enrollment part 005
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-public_provider_enrollment-part-005
+          path: provider_economics_transfer/chunks/public_provider_enrollment/public_provider_enrollment.part.005
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload nppes_full_monthly_v2 part 000
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-nppes_full_monthly_v2-part-000
+          path: provider_economics_transfer/chunks/nppes_full_monthly_v2/nppes_full_monthly_v2.part.000
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload nppes_full_monthly_v2 part 001
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-nppes_full_monthly_v2-part-001
+          path: provider_economics_transfer/chunks/nppes_full_monthly_v2/nppes_full_monthly_v2.part.001
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload nppes_full_monthly_v2 part 002
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-nppes_full_monthly_v2-part-002
+          path: provider_economics_transfer/chunks/nppes_full_monthly_v2/nppes_full_monthly_v2.part.002
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload nppes_full_monthly_v2 part 003
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-nppes_full_monthly_v2-part-003
+          path: provider_economics_transfer/chunks/nppes_full_monthly_v2/nppes_full_monthly_v2.part.003
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload nppes_full_monthly_v2 part 004
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-nppes_full_monthly_v2-part-004
+          path: provider_economics_transfer/chunks/nppes_full_monthly_v2/nppes_full_monthly_v2.part.004
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload nppes_full_monthly_v2 part 005
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-nppes_full_monthly_v2-part-005
+          path: provider_economics_transfer/chunks/nppes_full_monthly_v2/nppes_full_monthly_v2.part.005
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload nppes_full_monthly_v2 part 006
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-nppes_full_monthly_v2-part-006
+          path: provider_economics_transfer/chunks/nppes_full_monthly_v2/nppes_full_monthly_v2.part.006
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload nppes_full_monthly_v2 part 007
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-nppes_full_monthly_v2-part-007
+          path: provider_economics_transfer/chunks/nppes_full_monthly_v2/nppes_full_monthly_v2.part.007
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload nppes_full_monthly_v2 part 008
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-nppes_full_monthly_v2-part-008
+          path: provider_economics_transfer/chunks/nppes_full_monthly_v2/nppes_full_monthly_v2.part.008
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload nppes_full_monthly_v2 part 009
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-nppes_full_monthly_v2-part-009
+          path: provider_economics_transfer/chunks/nppes_full_monthly_v2/nppes_full_monthly_v2.part.009
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload nppes_full_monthly_v2 part 010
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-nppes_full_monthly_v2-part-010
+          path: provider_economics_transfer/chunks/nppes_full_monthly_v2/nppes_full_monthly_v2.part.010
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload nppes_full_monthly_v2 part 011
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-nppes_full_monthly_v2-part-011
+          path: provider_economics_transfer/chunks/nppes_full_monthly_v2/nppes_full_monthly_v2.part.011
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload nppes_full_monthly_v2 part 012
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-nppes_full_monthly_v2-part-012
+          path: provider_economics_transfer/chunks/nppes_full_monthly_v2/nppes_full_monthly_v2.part.012
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload nppes_full_monthly_v2 part 013
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-nppes_full_monthly_v2-part-013
+          path: provider_economics_transfer/chunks/nppes_full_monthly_v2/nppes_full_monthly_v2.part.013
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload nppes_full_monthly_v2 part 014
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-nppes_full_monthly_v2-part-014
+          path: provider_economics_transfer/chunks/nppes_full_monthly_v2/nppes_full_monthly_v2.part.014
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload nppes_full_monthly_v2 part 015
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-nppes_full_monthly_v2-part-015
+          path: provider_economics_transfer/chunks/nppes_full_monthly_v2/nppes_full_monthly_v2.part.015
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload nppes_full_monthly_v2 part 016
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-nppes_full_monthly_v2-part-016
+          path: provider_economics_transfer/chunks/nppes_full_monthly_v2/nppes_full_monthly_v2.part.016
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload nppes_full_monthly_v2 part 017
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-nppes_full_monthly_v2-part-017
+          path: provider_economics_transfer/chunks/nppes_full_monthly_v2/nppes_full_monthly_v2.part.017
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload nppes_full_monthly_v2 part 018
+        uses: actions/upload-artifact@v4
+        with:
+          name: pe-nppes_full_monthly_v2-part-018
+          path: provider_economics_transfer/chunks/nppes_full_monthly_v2/nppes_full_monthly_v2.part.018
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 0
+
