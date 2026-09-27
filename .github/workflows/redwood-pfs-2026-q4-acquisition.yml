@@ -1,0 +1,107 @@
+name: Redwood PFS 2026 Q4 Acquisition
+
+on:
+  push:
+    paths:
+      - ".github/workflows/redwood-pfs-2026-q4-acquisition.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  acquire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Acquire current 26D Medicare Physician Fee Schedule files
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p pfs26d
+          python3 - <<'PY'
+          import hashlib, json, os, urllib.parse, urllib.request
+          from html.parser import HTMLParser
+
+          ROOT="pfs26d"
+          UA={"User-Agent":"Redwood-Research-Acquisition/0.8"}
+
+          class Links(HTMLParser):
+              def __init__(self):
+                  super().__init__(); self.href=None; self.buf=[]; self.links=[]
+              def handle_starttag(self,tag,attrs):
+                  if tag=="a":
+                      self.href=dict(attrs).get("href"); self.buf=[]
+              def handle_data(self,data):
+                  if self.href is not None: self.buf.append(data)
+              def handle_endtag(self,tag):
+                  if tag=="a" and self.href:
+                      self.links.append((" ".join(self.buf).strip(),self.href))
+                      self.href=None; self.buf=[]
+
+          def get(url):
+              req=urllib.request.Request(url,headers=UA)
+              with urllib.request.urlopen(req,timeout=180) as r: return r.read()
+
+          def save(url,path):
+              req=urllib.request.Request(url,headers=UA)
+              with urllib.request.urlopen(req,timeout=600) as r, open(path,"wb") as f:
+                  while True:
+                      b=r.read(1024*1024)
+                      if not b: break
+                      f.write(b)
+
+          pages=[
+              ("RVU26D","https://www.cms.gov/medicare/payment/fee-schedules/physician/pfs-relative-value-files/rvu26d"),
+              ("PFREV26D","https://www.cms.gov/medicare/payment/fee-schedules/physician/national-payment-amount-file/pfrev26d"),
+              ("ZIP_LOCALITY","https://www.cms.gov/medicare/payment/fee-schedules/physician/carrier-specific-files/zip-code-carrier-locality-file"),
+              ("ALL_STATES_2026","https://www.cms.gov/medicare/payment/fee-schedules/physician/carrier-specific-files/all-states-2026"),
+          ]
+
+          sources=[]
+          for label,page in pages:
+              html=get(page).decode("utf-8",errors="replace")
+              p=Links(); p.feed(html)
+              candidates=[]
+              for txt,href in p.links:
+                  full=urllib.parse.urljoin(page,href)
+                  low=(txt+" "+full).lower()
+                  if label=="RVU26D" and "rvu26d" in low and (".zip" in low or "/files/zip/" in low):
+                      candidates.append((txt,full))
+                  elif label=="PFREV26D" and "pfrev26d" in low and (".zip" in low or "/files/zip/" in low):
+                      candidates.append((txt,full))
+                  elif label=="ZIP_LOCALITY" and ("zip" in low and "locality" in low and (".zip" in low or ".csv" in low or ".txt" in low)):
+                      candidates.append((txt,full))
+                  elif label=="ALL_STATES_2026" and ("2026" in low and "carrier" in low and (".zip" in low or "/files/zip/" in low)):
+                      candidates.append((txt,full))
+
+              seen=set()
+              for idx,(txt,url) in enumerate(candidates):
+                  if url in seen: continue
+                  seen.add(url)
+                  name=os.path.basename(urllib.parse.urlparse(url).path) or (label+"_"+str(idx)+".bin")
+                  dest=os.path.join(ROOT,name)
+                  if not os.path.exists(dest):
+                      try:
+                          save(url,dest)
+                      except Exception as e:
+                          sources.append({"label":label,"page":page,"anchor":txt,"url":url,"status":"DOWNLOAD_FAILED","error":repr(e)})
+                          continue
+                  h=hashlib.sha256()
+                  with open(dest,"rb") as f:
+                      for block in iter(lambda:f.read(1024*1024),b""): h.update(block)
+                  sources.append({"label":label,"page":page,"anchor":txt,"url":url,"file_name":name,"bytes":os.path.getsize(dest),"sha256":h.hexdigest(),"status":"ACQUIRED"})
+
+          with open(os.path.join(ROOT,"SOURCES.json"),"w") as f: json.dump(sources,f,indent=2)
+          with open(os.path.join(ROOT,"README.md"),"w") as f:
+              f.write("# Redwood Medicare PFS 2026 Q4 / 26D\n\n")
+              f.write("Current October 2026 reference files acquired from CMS. Keep alongside earlier 26C files to simulate rate changes. These are Medicare reference rates, not commercial payer contracts.\n")
+          PY
+          find pfs26d -type f -print0 | sort -z | xargs -0 sha256sum > pfs26d/SHA256SUMS.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: redwood-cms-pfs-2026-q4-26d
+          path: pfs26d/
+          retention-days: 1
+          compression-level: 0
