@@ -383,17 +383,20 @@ jobs:
           with open(os.path.join(CTRL,"provenance_manifest.json"),"w") as f:
               json.dump({"version":"0.1","files":hashes},f,indent=2,sort_keys=True)
 
+          readme_lines=[
+              "# Redwood Real-World Reference Cohort v0.1",
+              "",
+              "Compact cross-linked public-data cohort for Redwood semantic and sustainability testing.",
+              "",
+              "Observed facts live under observed/.",
+              "Simulation-only groupings live under derived/.",
+              "Selection/source/hashes live under control/.",
+              "",
+              "This is not a representative sample of U.S. physicians and must not be used for market inference.",
+              ""
+          ]
           with open(os.path.join(ROOT,"README.md"),"w") as f:
-              f.write("""# Redwood Real-World Reference Cohort v0.1
-
-Compact cross-linked public-data cohort for Redwood semantic and sustainability testing.
-
-Observed facts live under observed/.
-Simulation-only groupings live under derived/.
-Selection/source/hashes live under control/.
-
-This is not a representative sample of U.S. physicians and must not be used for market inference.
-""")
+              f.write("\\n".join(readme_lines))
           PY
 
           rm -rf "$root/tmp"
