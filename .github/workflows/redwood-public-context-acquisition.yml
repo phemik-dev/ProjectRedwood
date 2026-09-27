@@ -35,6 +35,18 @@ jobs:
               with open(path,"w",encoding="utf-8") as f:
                   json.dump(obj,f,indent=2,sort_keys=True)
 
+          def sample_csv(url,path,max_rows=10000):
+              req=urllib.request.Request(url, headers={"User-Agent":"Redwood-Research-Acquisition/0.5"})
+              with urllib.request.urlopen(req, timeout=300) as r:
+                  inp=io.TextIOWrapper(r,encoding="utf-8-sig",errors="replace",newline="")
+                  reader=csv.reader(inp)
+                  with open(path,"w",encoding="utf-8",newline="") as out:
+                      writer=csv.writer(out)
+                      for i,row in enumerate(reader):
+                          writer.writerow(row)
+                          if i >= max_rows:
+                              break
+
           # 1. Provider Data Catalog: exact current datasets.
           meta_url="https://data.cms.gov/provider-data/api/1/metastore/schemas/dataset/items"
           items=json.loads(get(meta_url))
@@ -66,13 +78,11 @@ jobs:
 
           # Save deterministic bounded CSV samples without loading huge national files.
           for x in selected:
-              raw=get(x["downloadURL"])
-              # Provider catalog CSVs are manageable enough for a bounded stream; keep header + first 10k data rows.
-              textdata=raw.decode("utf-8-sig",errors="replace")
-              lines=textdata.splitlines()
-              sample="\n".join(lines[:10001])+"\n"
-              with open(root+"/provider_catalog/"+x["slug"]+"__first_10000_rows.csv","w",encoding="utf-8",newline="") as f:
-                  f.write(sample)
+              sample_csv(
+                  x["downloadURL"],
+                  root+"/provider_catalog/"+x["slug"]+"__first_10000_rows.csv",
+                  10000
+              )
               if x.get("describedBy"):
                   try:
                       with open(root+"/provider_catalog/"+x["slug"]+"__data_dictionary.pdf","wb") as f:
@@ -112,7 +122,19 @@ jobs:
 
           # 3. CMS Provider Enrollment: main and reassignment data.
           cms_catalog=json.loads(get("https://data.cms.gov/data.json"))
-          ds=next(x for x in cms_catalog["dataset"] if x.get("title")=="Medicare Fee-For-Service Public Provider Enrollment")
+          enrollment_matches=[
+              x for x in cms_catalog["dataset"]
+              if "public provider enrollment" in str(x.get("title","")).lower()
+              and "medicare" in str(x.get("title","")).lower()
+          ]
+          if not enrollment_matches:
+              write_json(root+"/enrollment/catalog_titles.json",[
+                  x.get("title") for x in cms_catalog["dataset"]
+                  if "provider" in str(x.get("title","")).lower()
+                  and "enrollment" in str(x.get("title","")).lower()
+              ])
+              raise RuntimeError("Could not locate Medicare public provider enrollment dataset in data.json")
+          ds=enrollment_matches[0]
           write_json(root+"/enrollment/dataset_metadata.json",{
               "title":ds.get("title"),"identifier":ds.get("identifier"),"landingPage":ds.get("landingPage"),
               "modified":ds.get("modified"),"distribution_count":len(ds.get("distribution",[]))
@@ -121,9 +143,7 @@ jobs:
           csv_d=[d for d in ds.get("distribution",[]) if str(d.get("format","")).upper()=="CSV" and d.get("downloadURL")]
           if csv_d:
               url=csv_d[0]["downloadURL"]
-              raw=get(url).decode("utf-8-sig",errors="replace").splitlines()
-              with open(root+"/enrollment/public_provider_enrollment__first_10000_rows.csv","w",encoding="utf-8") as f:
-                  f.write("\n".join(raw[:10001])+"\n")
+              sample_csv(url,root+"/enrollment/public_provider_enrollment__first_10000_rows.csv",10000)
               write_json(root+"/enrollment/main_source.json",{"url":url})
           # Resources API often exposes Address / Reassignment / Secondary Specialty subfiles.
           api_d=[d for d in ds.get("distribution",[]) if str(d.get("format","")).upper()=="API" and d.get("resourcesAPI")]
@@ -137,9 +157,7 @@ jobs:
                   if dl and any(k in name.lower() for k in ["reassignment","address","secondary specialty","additional npi"]):
                       safe=re.sub(r"[^A-Za-z0-9._-]+","_",name).strip("_")
                       try:
-                          raw=get(dl).decode("utf-8-sig",errors="replace").splitlines()
-                          with open(root+"/enrollment/"+safe+"__first_10000_rows.csv","w",encoding="utf-8") as f:
-                              f.write("\n".join(raw[:10001])+"\n")
+                          sample_csv(dl,root+"/enrollment/"+safe+"__first_10000_rows.csv",10000)
                       except Exception as e:
                           with open(root+"/enrollment/"+safe+"__error.txt","w") as f: f.write(str(e))
 
