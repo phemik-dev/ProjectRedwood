@@ -1,0 +1,271 @@
+name: Redwood Ownership Transaction Acquisition
+
+on:
+  push:
+    paths:
+      - ".github/workflows/redwood-ownership-transaction-acquisition.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  acquire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Discover and acquire current CMS ownership and enrollment datasets
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="ownership"
+          mkdir -p "$root"
+          python3 - <<'PY'
+          import csv, io, json, os, re, hashlib, urllib.request, urllib.parse, shutil
+
+          ROOT="ownership"
+          UA={"User-Agent":"Redwood-Research-Acquisition/0.6"}
+
+          targets = [
+              ("hospital_chow", ["hospital change of ownership"], []),
+              ("hospital_chow_owner", ["hospital change of ownership", "owner"], []),
+              ("hospital_all_owners", ["hospital all owners"], []),
+              ("hospital_enrollments", ["hospital enrollments"], []),
+              ("asc_all_owners", ["ambulatory surgical center", "all owners"], []),
+              ("asc_enrollments", ["ambulatory surgical center", "enrollments"], []),
+              ("fqhc_all_owners", ["federally qualified health center", "all owners"], []),
+              ("fqhc_enrollments", ["federally qualified health center", "enrollments"], []),
+              ("rhc_all_owners", ["rural health clinic", "all owners"], []),
+              ("rhc_enrollments", ["rural health clinic", "enrollments"], []),
+          ]
+
+          def get(url, timeout=180):
+              req=urllib.request.Request(url, headers=UA)
+              with urllib.request.urlopen(req, timeout=timeout) as r:
+                  return r.read()
+
+          def download(url, dest):
+              req=urllib.request.Request(url, headers=UA)
+              with urllib.request.urlopen(req, timeout=900) as r, open(dest,"wb") as f:
+                  shutil.copyfileobj(r,f,1024*1024)
+              return os.path.getsize(dest)
+
+          def norm(s):
+              return re.sub(r"[^a-z0-9]+"," ",str(s or "").lower()).strip()
+
+          def choose_distribution(ds):
+              dslist=ds.get("distribution",[]) or []
+              csvs=[]
+              for d in dslist:
+                  url=d.get("downloadURL")
+                  if not url: continue
+                  fmt=norm(d.get("format"))
+                  media=norm(d.get("mediaType"))
+                  title=norm(d.get("title"))
+                  if "csv" in fmt or "csv" in media or url.lower().split("?")[0].endswith(".csv"):
+                      csvs.append(d)
+              return csvs[0] if csvs else None
+
+          catalog=json.loads(get("https://data.cms.gov/data.json"))
+          datasets=catalog.get("dataset",[])
+          with open(os.path.join(ROOT,"CMS_CATALOG_SNAPSHOT.json"),"w",encoding="utf-8") as f:
+              json.dump({"dataset_count":len(datasets),"titles":[x.get("title") for x in datasets]},f,indent=2)
+
+          manifest=[]
+          selected=[]
+          used_ids=set()
+
+          for slug, must, exclude in targets:
+              candidates=[]
+              for ds in datasets:
+                  title=norm(ds.get("title"))
+                  if all(term in title for term in must) and not any(term in title for term in exclude):
+                      candidates.append(ds)
+              # Special disambiguation: base CHOW should not select Owner Information.
+              if slug=="hospital_chow":
+                  candidates=[x for x in candidates if "owner" not in norm(x.get("title"))]
+              if slug=="hospital_chow_owner":
+                  candidates=[x for x in candidates if "owner" in norm(x.get("title"))]
+              # Keep deterministic order: most recently modified first, then title.
+              candidates.sort(key=lambda x:(str(x.get("modified") or ""),str(x.get("title") or "")),reverse=True)
+              ds=candidates[0] if candidates else None
+              if not ds:
+                  manifest.append({"slug":slug,"status":"NOT_FOUND","query_terms":must})
+                  continue
+              ident=str(ds.get("identifier") or ds.get("@id") or "")
+              if ident in used_ids:
+                  manifest.append({"slug":slug,"status":"DUPLICATE_MATCH_REVIEW","title":ds.get("title"),"identifier":ident})
+                  continue
+              used_ids.add(ident)
+              dist=choose_distribution(ds)
+              rec={
+                  "slug":slug,
+                  "title":ds.get("title"),
+                  "identifier":ident,
+                  "landingPage":ds.get("landingPage"),
+                  "modified":ds.get("modified"),
+                  "issued":ds.get("issued"),
+                  "description":ds.get("description"),
+                  "downloadURL": dist.get("downloadURL") if dist else None,
+                  "describedBy": dist.get("describedBy") if dist else None,
+              }
+              selected.append(rec)
+              folder=os.path.join(ROOT,slug)
+              os.makedirs(folder,exist_ok=True)
+              with open(os.path.join(folder,"SOURCE.json"),"w",encoding="utf-8") as f:
+                  json.dump(rec,f,indent=2,sort_keys=True)
+
+              if not dist:
+                  rec["status"]="NO_CSV_DISTRIBUTION"
+                  manifest.append(rec)
+                  continue
+
+              url=dist["downloadURL"]
+              ext=os.path.splitext(urllib.parse.urlparse(url).path)[1].lower()
+              if ext not in [".csv",".zip",".txt"]:
+                  ext=".csv"
+              raw=os.path.join(folder,"SOURCE"+ext)
+              try:
+                  size=download(url,raw)
+                  h=hashlib.sha256()
+                  with open(raw,"rb") as f:
+                      for block in iter(lambda:f.read(1024*1024),b""): h.update(block)
+                  rec["bytes"]=size
+                  rec["sha256"]=h.hexdigest()
+                  rec["status"]="ACQUIRED_FULL"
+                  # Make bounded inspection fixture if source is textual CSV.
+                  if ext==".csv":
+                      with open(raw,"r",encoding="utf-8-sig",errors="replace",newline="") as src, open(os.path.join(folder,"FIRST_10000_ROWS.csv"),"w",encoding="utf-8",newline="") as out:
+                          reader=csv.reader(src); writer=csv.writer(out)
+                          for i,row in enumerate(reader):
+                              writer.writerow(row)
+                              if i>=10000: break
+                  if rec.get("describedBy"):
+                      try:
+                          dd=get(rec["describedBy"],120)
+                          with open(os.path.join(folder,"DATA_DICTIONARY"),"wb") as f: f.write(dd)
+                      except Exception as e:
+                          with open(os.path.join(folder,"DATA_DICTIONARY_ERROR.txt"),"w") as f: f.write(str(e))
+              except Exception as e:
+                  rec["status"]="DOWNLOAD_FAILED"
+                  rec["error"]=repr(e)
+              with open(os.path.join(folder,"RECEIPT.json"),"w",encoding="utf-8") as f:
+                  json.dump(rec,f,indent=2,sort_keys=True)
+              manifest.append(rec)
+
+          with open(os.path.join(ROOT,"MANIFEST.json"),"w",encoding="utf-8") as f:
+              json.dump(manifest,f,indent=2,sort_keys=True)
+          with open(os.path.join(ROOT,"MANIFEST.csv"),"w",encoding="utf-8",newline="") as f:
+              fields=["slug","status","title","identifier","modified","issued","bytes","sha256","landingPage","downloadURL","error"]
+              w=csv.DictWriter(f,fieldnames=fields,extrasaction="ignore")
+              w.writeheader(); w.writerows(manifest)
+          with open(os.path.join(ROOT,"README.md"),"w",encoding="utf-8") as f:
+              f.write("""# Redwood CMS Ownership / CHOW / Enrollment Corpus
+
+Current public CMS ownership and enrollment evidence acquired from the live data.cms.gov catalog.
+
+Use:
+- transaction/ownership-change context
+- buyer/seller and effective-date simulation
+- facility/practice-affiliation context
+- acquisition/same-store scenario construction
+- source-system and identifier-linkage tests
+
+Limits:
+- These public files do not replace commercial healthcare M&A databases.
+- Facility ownership does not by itself prove physician-practice ownership.
+- A public CHOW record is transaction context, not a QoR conclusion.
+- Preserve SOURCE files unchanged; derived simulation cases belong elsewhere.
+""")
+          PY
+
+      - name: Upload control manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: redwood-cms-ownership-control
+          path: |
+            ownership/MANIFEST.json
+            ownership/MANIFEST.csv
+            ownership/README.md
+          retention-days: 1
+
+      - name: Upload hospital CHOW
+        uses: actions/upload-artifact@v4
+        with:
+          name: redwood-hospital-chow
+          path: ownership/hospital_chow/
+          if-no-files-found: warn
+          retention-days: 1
+          compression-level: 0
+      - name: Upload hospital CHOW owner
+        uses: actions/upload-artifact@v4
+        with:
+          name: redwood-hospital-chow-owner
+          path: ownership/hospital_chow_owner/
+          if-no-files-found: warn
+          retention-days: 1
+          compression-level: 0
+      - name: Upload hospital owners
+        uses: actions/upload-artifact@v4
+        with:
+          name: redwood-hospital-all-owners
+          path: ownership/hospital_all_owners/
+          if-no-files-found: warn
+          retention-days: 1
+          compression-level: 0
+      - name: Upload hospital enrollments
+        uses: actions/upload-artifact@v4
+        with:
+          name: redwood-hospital-enrollments
+          path: ownership/hospital_enrollments/
+          if-no-files-found: warn
+          retention-days: 1
+          compression-level: 0
+      - name: Upload ASC owners
+        uses: actions/upload-artifact@v4
+        with:
+          name: redwood-asc-all-owners
+          path: ownership/asc_all_owners/
+          if-no-files-found: warn
+          retention-days: 1
+          compression-level: 0
+      - name: Upload ASC enrollments
+        uses: actions/upload-artifact@v4
+        with:
+          name: redwood-asc-enrollments
+          path: ownership/asc_enrollments/
+          if-no-files-found: warn
+          retention-days: 1
+          compression-level: 0
+      - name: Upload FQHC owners
+        uses: actions/upload-artifact@v4
+        with:
+          name: redwood-fqhc-all-owners
+          path: ownership/fqhc_all_owners/
+          if-no-files-found: warn
+          retention-days: 1
+          compression-level: 0
+      - name: Upload FQHC enrollments
+        uses: actions/upload-artifact@v4
+        with:
+          name: redwood-fqhc-enrollments
+          path: ownership/fqhc_enrollments/
+          if-no-files-found: warn
+          retention-days: 1
+          compression-level: 0
+      - name: Upload RHC owners
+        uses: actions/upload-artifact@v4
+        with:
+          name: redwood-rhc-all-owners
+          path: ownership/rhc_all_owners/
+          if-no-files-found: warn
+          retention-days: 1
+          compression-level: 0
+      - name: Upload RHC enrollments
+        uses: actions/upload-artifact@v4
+        with:
+          name: redwood-rhc-enrollments
+          path: ownership/rhc_enrollments/
+          if-no-files-found: warn
+          retention-days: 1
+          compression-level: 0
