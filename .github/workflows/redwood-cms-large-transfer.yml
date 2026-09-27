@@ -1,0 +1,169 @@
+name: Redwood CMS Large Archive Transfer
+
+on:
+  push:
+    paths:
+      - ".github/workflows/redwood-cms-large-transfer.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  acquire-and-split:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Download and split large CMS archives
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="transfer/cms_large"
+          mkdir -p "$root/raw" "$root/chunks"
+
+          cat > "$root/SOURCES.tsv" <<'EOF'
+          logical_name	file_name	official_url
+          carrier_1a	DE1_0_2008_to_2010_Carrier_Claims_Sample_1A.zip	https://downloads.cms.gov/files/DE1_0_2008_to_2010_Carrier_Claims_Sample_1A.zip
+          carrier_1b	DE1_0_2008_to_2010_Carrier_Claims_Sample_1B.zip	https://downloads.cms.gov/files/DE1_0_2008_to_2010_Carrier_Claims_Sample_1B.zip
+          pde	DE1_0_2008_to_2010_Prescription_Drug_Events_Sample_1.zip	https://downloads.cms.gov/files/DE1_0_2008_to_2010_Prescription_Drug_Events_Sample_1.zip
+          EOF
+
+          printf "logical_name\tfile_name\tbytes\tsha256\tofficial_url\n" > "$root/RAW_MANIFEST.tsv"
+          printf "logical_name\tchunk_name\tchunk_bytes\tchunk_sha256\n" > "$root/CHUNK_MANIFEST.tsv"
+
+          tail -n +2 "$root/SOURCES.tsv" | while IFS=$'\t' read -r logical name url; do
+            echo "::group::Acquire $logical"
+            curl -fL --retry 5 --retry-delay 3 --connect-timeout 30 --max-time 1200               -A "Redwood-Research-Acquisition/0.3"               -o "$root/raw/$name" "$url"
+            bytes=$(stat -c%s "$root/raw/$name")
+            hash=$(sha256sum "$root/raw/$name" | awk '{print $1}')
+            printf "%s\t%s\t%s\t%s\t%s\n" "$logical" "$name" "$bytes" "$hash" "$url" >> "$root/RAW_MANIFEST.tsv"
+
+            mkdir -p "$root/chunks/$logical"
+            split -b 32M -d -a 3 "$root/raw/$name" "$root/chunks/$logical/$logical.part."
+            for part in "$root/chunks/$logical"/*; do
+              pbase=$(basename "$part")
+              pbytes=$(stat -c%s "$part")
+              phash=$(sha256sum "$part" | awk '{print $1}')
+              printf "%s\t%s\t%s\t%s\n" "$logical" "$pbase" "$pbytes" "$phash" >> "$root/CHUNK_MANIFEST.tsv"
+            done
+            echo "::endgroup::"
+          done
+
+          cat > "$root/REASSEMBLY.md" <<'EOF'
+          # Reassembly
+
+          The chunk files are transport fragments of the unchanged official CMS ZIPs.
+          Reassemble in lexical order:
+
+          carrier_1a:
+          cat chunks/carrier_1a/carrier_1a.part.* > DE1_0_2008_to_2010_Carrier_Claims_Sample_1A.zip
+
+          carrier_1b:
+          cat chunks/carrier_1b/carrier_1b.part.* > DE1_0_2008_to_2010_Carrier_Claims_Sample_1B.zip
+
+          pde:
+          cat chunks/pde/pde.part.* > DE1_0_2008_to_2010_Prescription_Drug_Events_Sample_1.zip
+
+          After reassembly, verify against RAW_MANIFEST.tsv.
+          EOF
+
+      - name: Upload transfer manifests
+        uses: actions/upload-artifact@v4
+        with:
+          name: cms-large-transfer-manifests
+          path: |
+            transfer/cms_large/SOURCES.tsv
+            transfer/cms_large/RAW_MANIFEST.tsv
+            transfer/cms_large/CHUNK_MANIFEST.tsv
+            transfer/cms_large/REASSEMBLY.md
+          retention-days: 1
+
+      - name: Upload carrier 1A chunk 000
+        uses: actions/upload-artifact@v4
+        with:
+          name: cms-carrier-1a-part-000
+          path: transfer/cms_large/chunks/carrier_1a/carrier_1a.part.000
+          retention-days: 1
+          compression-level: 0
+      - name: Upload carrier 1A chunk 001
+        uses: actions/upload-artifact@v4
+        with:
+          name: cms-carrier-1a-part-001
+          path: transfer/cms_large/chunks/carrier_1a/carrier_1a.part.001
+          retention-days: 1
+          compression-level: 0
+      - name: Upload carrier 1A chunk 002
+        uses: actions/upload-artifact@v4
+        with:
+          name: cms-carrier-1a-part-002
+          path: transfer/cms_large/chunks/carrier_1a/carrier_1a.part.002
+          retention-days: 1
+          compression-level: 0
+      - name: Upload carrier 1A chunk 003
+        uses: actions/upload-artifact@v4
+        with:
+          name: cms-carrier-1a-part-003
+          path: transfer/cms_large/chunks/carrier_1a/carrier_1a.part.003
+          if-no-files-found: warn
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload carrier 1B chunk 000
+        uses: actions/upload-artifact@v4
+        with:
+          name: cms-carrier-1b-part-000
+          path: transfer/cms_large/chunks/carrier_1b/carrier_1b.part.000
+          retention-days: 1
+          compression-level: 0
+      - name: Upload carrier 1B chunk 001
+        uses: actions/upload-artifact@v4
+        with:
+          name: cms-carrier-1b-part-001
+          path: transfer/cms_large/chunks/carrier_1b/carrier_1b.part.001
+          retention-days: 1
+          compression-level: 0
+      - name: Upload carrier 1B chunk 002
+        uses: actions/upload-artifact@v4
+        with:
+          name: cms-carrier-1b-part-002
+          path: transfer/cms_large/chunks/carrier_1b/carrier_1b.part.002
+          retention-days: 1
+          compression-level: 0
+      - name: Upload carrier 1B chunk 003
+        uses: actions/upload-artifact@v4
+        with:
+          name: cms-carrier-1b-part-003
+          path: transfer/cms_large/chunks/carrier_1b/carrier_1b.part.003
+          if-no-files-found: warn
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload PDE chunk 000
+        uses: actions/upload-artifact@v4
+        with:
+          name: cms-pde-part-000
+          path: transfer/cms_large/chunks/pde/pde.part.000
+          retention-days: 1
+          compression-level: 0
+      - name: Upload PDE chunk 001
+        uses: actions/upload-artifact@v4
+        with:
+          name: cms-pde-part-001
+          path: transfer/cms_large/chunks/pde/pde.part.001
+          retention-days: 1
+          compression-level: 0
+      - name: Upload PDE chunk 002
+        uses: actions/upload-artifact@v4
+        with:
+          name: cms-pde-part-002
+          path: transfer/cms_large/chunks/pde/pde.part.002
+          retention-days: 1
+          compression-level: 0
+      - name: Upload PDE chunk 003
+        uses: actions/upload-artifact@v4
+        with:
+          name: cms-pde-part-003
+          path: transfer/cms_large/chunks/pde/pde.part.003
+          if-no-files-found: warn
+          retention-days: 1
+          compression-level: 0
