@@ -1,0 +1,346 @@
+name: Redwood Physical Scale Materialization
+
+on:
+  push:
+    paths:
+      - ".github/workflows/redwood-scale-physical-materialization.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Generate physical 1M and 10M scale corpora
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p scale
+          cat > /tmp/generate_scale.py <<'PY'
+          import csv, gzip, hashlib, json, os, math
+          from pathlib import Path
+          from datetime import date, timedelta
+
+          PART_ROWS=500_000
+          CLAIM_FIELDS=[
+            "Claim_ID","DOS","Patient_Token","Provider_ID","Location_ID","Service_Code","Service_Line",
+            "Primary_Insurance","Billed_Amount","Expected_Allowed_Amount","Patient_Responsibility",
+            "Claim_Status","Original_File_Row","Source_System","Observed_NPI",
+            "Observed_HCPCS_Reference_Allowed","Provenance"
+          ]
+          PAYMENT_FIELDS=[
+            "Payment_ID","Claim_ID","Payment_Date","Payer_Raw","Payment_Type","Paid_Amount",
+            "Contractual_Adjustment","Denial_Adjustment","Remit_Trace","Source_System","Provenance"
+          ]
+          AR_FIELDS=[
+            "Claim_ID","Snapshot_Date","Payer_Raw","DOS","Original_Billed","Expected_Allowed",
+            "Total_Paid","Open_AR","Age_Days","Age_Bucket","Status","Provider_ID","Location_ID","Service_Line"
+          ]
+          SERVICES=[
+            ("99213","Primary Care"),("93000","Cardiology"),("66984","Ophthalmology"),
+            ("45378","Gastroenterology"),("27130","Orthopedic Surgery"),("52000","Urology")
+          ]
+          PAYERS=["Medicare","Aetna","BCBS","UnitedHealthcare","Cigna"]
+
+          def money(x): return f"{x:.2f}"
+
+          class PartitionWriter:
+              def __init__(self, folder, stem, fields):
+                  self.folder=Path(folder); self.folder.mkdir(parents=True,exist_ok=True)
+                  self.stem=stem; self.fields=fields; self.part=0; self.in_part=0; self.total=0; self.f=None; self.w=None
+              def open_next(self):
+                  if self.f: self.f.close()
+                  self.part+=1; self.in_part=0
+                  path=self.folder/f"{self.stem}_part_{self.part:03d}.csv.gz"
+                  self.f=gzip.open(path,"wt",encoding="utf-8",newline="",compresslevel=1)
+                  self.w=csv.DictWriter(self.f,fieldnames=self.fields)
+                  self.w.writeheader()
+              def write(self,row):
+                  if self.f is None or self.in_part>=PART_ROWS: self.open_next()
+                  self.w.writerow(row); self.in_part+=1; self.total+=1
+              def close(self):
+                  if self.f: self.f.close(); self.f=None
+
+          def write_masters(root):
+              with open(root/"Provider_Master.csv","w",newline="",encoding="utf-8") as f:
+                  w=csv.writer(f); w.writerow(["Provider_ID","Provider_Name","Specialty","Primary_Location","NPI","Provenance"])
+                  for i in range(48):
+                      code,name=SERVICES[i%len(SERVICES)]
+                      w.writerow([f"P{i+1:03d}",f"Scale Provider {i+1:03d}",name,f"LOC{(i%4)+1:02d}",f"19{i+1:08d}"[:10],"SCALE_SYNTHETIC"])
+              with open(root/"Location_Master.csv","w",newline="",encoding="utf-8") as f:
+                  w=csv.writer(f); w.writerow(["Location_ID","Location_Name","State","Type","Provenance"])
+                  for i,st in enumerate(["TX","FL","CA","NY"],1): w.writerow([f"LOC{i:02d}",f"Scale Site {i}",st,"Professional Office","SCALE_SYNTHETIC"])
+              with open(root/"Payer_Master.csv","w",newline="",encoding="utf-8") as f:
+                  w=csv.writer(f); w.writerow(["Payer_Code","Normalized_Payer","Category","Plan_Type","Provenance"])
+                  for i,p in enumerate(PAYERS,1): w.writerow([f"PYR{i:02d}",p,"Government" if p=="Medicare" else "Commercial",p,"SCALE_SYNTHETIC"])
+
+          def sha256(path):
+              h=hashlib.sha256()
+              with open(path,"rb") as f:
+                  for b in iter(lambda:f.read(1024*1024),b""): h.update(b)
+              return h.hexdigest()
+
+          def generate(profile, claims_target, secondary_count, ar_count):
+              root=Path("scale")/profile
+              for sub in ["claims","payments","ar"]: (root/sub).mkdir(parents=True,exist_ok=True)
+              write_masters(root)
+              cw=PartitionWriter(root/"claims","Claims_Raw",CLAIM_FIELDS)
+              pw=PartitionWriter(root/"payments","Payments_Raw",PAYMENT_FIELDS)
+              aw=PartitionWriter(root/"ar","AR_Snapshot_Raw",AR_FIELDS)
+              base=date(2026,1,1)
+              pay_id=0
+              snapshot=date(2026,9,30)
+              ar_start=secondary_count+1
+              ar_end=secondary_count+ar_count
+              for i in range(1,claims_target+1):
+                  svc,line=SERVICES[(i-1)%len(SERVICES)]
+                  payer=PAYERS[(i-1)%len(PAYERS)]
+                  prov=f"P{((i-1)%48)+1:03d}"
+                  loc=f"LOC{((i-1)%4)+1:02d}"
+                  dos=base+timedelta(days=(i-1)%180)
+                  billed=100.0+((i*37)%190000)/100.0
+                  allowed=round(billed*0.45,2)
+                  patient=round(allowed*0.20,2)
+                  in_secondary=i<=secondary_count
+                  in_ar=ar_start<=i<=ar_end
+                  claim_status="OPEN" if in_ar else "PAID"
+                  claim_id=f"SCLM{i:010d}"
+                  cw.write({
+                    "Claim_ID":claim_id,"DOS":dos.isoformat(),"Patient_Token":f"SPT{i:010d}",
+                    "Provider_ID":prov,"Location_ID":loc,"Service_Code":svc,"Service_Line":line,
+                    "Primary_Insurance":payer,"Billed_Amount":money(billed),"Expected_Allowed_Amount":money(allowed),
+                    "Patient_Responsibility":money(patient),"Claim_Status":claim_status,
+                    "Original_File_Row":str(i+1),"Source_System":f"Redwood Scale Physical {profile} v1",
+                    "Observed_NPI":f"19{((i-1)%48)+1:08d}"[:10],"Observed_HCPCS_Reference_Allowed":money(allowed),
+                    "Provenance":"SCALE_PHYSICALLY_MATERIALIZED"
+                  })
+                  payer_paid=round(allowed*(0.80 if (in_secondary or in_ar) else 1.0),2)
+                  pay_id+=1
+                  pw.write({
+                    "Payment_ID":f"SPAY{pay_id:012d}","Claim_ID":claim_id,
+                    "Payment_Date":(dos+timedelta(days=30)).isoformat(),"Payer_Raw":payer,"Payment_Type":"PAYER",
+                    "Paid_Amount":money(payer_paid),"Contractual_Adjustment":money(round(billed-allowed,2)),
+                    "Denial_Adjustment":"0.00","Remit_Trace":f"STRN-{pay_id:012d}",
+                    "Source_System":f"Redwood Scale Physical {profile} v1","Provenance":"SCALE_PHYSICALLY_MATERIALIZED"
+                  })
+                  if in_secondary:
+                      pay_id+=1
+                      pw.write({
+                        "Payment_ID":f"SPAY{pay_id:012d}","Claim_ID":claim_id,
+                        "Payment_Date":(dos+timedelta(days=45)).isoformat(),"Payer_Raw":"Patient","Payment_Type":"PATIENT",
+                        "Paid_Amount":money(patient),"Contractual_Adjustment":"0.00","Denial_Adjustment":"0.00",
+                        "Remit_Trace":f"STRN-{pay_id:012d}","Source_System":f"Redwood Scale Physical {profile} v1",
+                        "Provenance":"SCALE_PHYSICALLY_MATERIALIZED"
+                      })
+                  if in_ar:
+                      age=max((snapshot-dos).days,0)
+                      bucket="0-30" if age<=30 else "31-60" if age<=60 else "61-90" if age<=90 else "91-120" if age<=120 else "120+"
+                      aw.write({
+                        "Claim_ID":claim_id,"Snapshot_Date":snapshot.isoformat(),"Payer_Raw":payer,"DOS":dos.isoformat(),
+                        "Original_Billed":money(billed),"Expected_Allowed":money(allowed),"Total_Paid":money(payer_paid),
+                        "Open_AR":money(patient),"Age_Days":str(age),"Age_Bucket":bucket,"Status":"OPEN",
+                        "Provider_ID":prov,"Location_ID":loc,"Service_Line":line
+                      })
+              cw.close(); pw.close(); aw.close()
+
+              manifest={
+                "version":"1.0","profile":profile,"physically_materialized":True,"recipe_only":False,
+                "claims":cw.total,"payments":pw.total,"ar_rows":aw.total,
+                "partition_rows":PART_ROWS,"storage":"partitioned gzip CSV; all data partitions physically present",
+                "files":[]
+              }
+              for p in sorted(root.rglob("*")):
+                  if p.is_file() and p.name not in {"MANIFEST.json","README.md","FULLY_MATERIALIZED.txt"}:
+                      manifest["files"].append({"path":str(p.relative_to(root)),"bytes":p.stat().st_size,"sha256":sha256(p)})
+              with open(root/"MANIFEST.json","w") as f: json.dump(manifest,f,indent=2)
+              with open(root/"FULLY_MATERIALIZED.txt","w") as f:
+                  f.write(f"{profile} scale corpus is physically materialized.\nClaims={cw.total}\nPayments={pw.total}\nAR={aw.total}\nRecipe-only substitution is not permitted.\n")
+              with open(root/"README.md","w") as f:
+                  f.write(f"# Redwood Scale Corpus — {profile.upper()} PHYSICALLY MATERIALIZED\n\n")
+                  f.write("These are the actual stored data partitions, not a future-generation recipe.\n\n")
+                  f.write(f"- Claims: {cw.total:,}\n- Payments: {pw.total:,}\n- A/R rows: {aw.total:,}\n")
+                  f.write("- Purpose: throughput, memory, indexing, rerun and compiler stress testing only.\n")
+                  f.write("- Provenance: synthetic scale data using ENG001-compatible source schemas.\n")
+              print(profile, cw.total, pw.total, aw.total, flush=True)
+
+          generate("1m",1_000_000,322_917,435_418)
+          generate("10m",10_000_000,3_229_170,4_354_180)
+          PY
+          python /tmp/generate_scale.py
+
+      - name: Upload 1M physical corpus
+        uses: actions/upload-artifact@v4
+        with:
+          name: redwood-scale-1m-physical
+          path: scale/1m/
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload 10M control
+        uses: actions/upload-artifact@v4
+        with:
+          name: redwood-scale-10m-control
+          path: |
+            scale/10m/MANIFEST.json
+            scale/10m/README.md
+            scale/10m/FULLY_MATERIALIZED.txt
+            scale/10m/Provider_Master.csv
+            scale/10m/Location_Master.csv
+            scale/10m/Payer_Master.csv
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload 10M claims 001-005
+        uses: actions/upload-artifact@v4
+        with:
+          name: redwood-scale-10m-claims-001-005
+          path: |
+            scale/10m/claims/Claims_Raw_part_001.csv.gz
+            scale/10m/claims/Claims_Raw_part_002.csv.gz
+            scale/10m/claims/Claims_Raw_part_003.csv.gz
+            scale/10m/claims/Claims_Raw_part_004.csv.gz
+            scale/10m/claims/Claims_Raw_part_005.csv.gz
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload 10M claims 006-010
+        uses: actions/upload-artifact@v4
+        with:
+          name: redwood-scale-10m-claims-006-010
+          path: |
+            scale/10m/claims/Claims_Raw_part_006.csv.gz
+            scale/10m/claims/Claims_Raw_part_007.csv.gz
+            scale/10m/claims/Claims_Raw_part_008.csv.gz
+            scale/10m/claims/Claims_Raw_part_009.csv.gz
+            scale/10m/claims/Claims_Raw_part_010.csv.gz
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload 10M claims 011-015
+        uses: actions/upload-artifact@v4
+        with:
+          name: redwood-scale-10m-claims-011-015
+          path: |
+            scale/10m/claims/Claims_Raw_part_011.csv.gz
+            scale/10m/claims/Claims_Raw_part_012.csv.gz
+            scale/10m/claims/Claims_Raw_part_013.csv.gz
+            scale/10m/claims/Claims_Raw_part_014.csv.gz
+            scale/10m/claims/Claims_Raw_part_015.csv.gz
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload 10M claims 016-020
+        uses: actions/upload-artifact@v4
+        with:
+          name: redwood-scale-10m-claims-016-020
+          path: |
+            scale/10m/claims/Claims_Raw_part_016.csv.gz
+            scale/10m/claims/Claims_Raw_part_017.csv.gz
+            scale/10m/claims/Claims_Raw_part_018.csv.gz
+            scale/10m/claims/Claims_Raw_part_019.csv.gz
+            scale/10m/claims/Claims_Raw_part_020.csv.gz
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload 10M payments 001-005
+        uses: actions/upload-artifact@v4
+        with:
+          name: redwood-scale-10m-payments-001-005
+          path: |
+            scale/10m/payments/Payments_Raw_part_001.csv.gz
+            scale/10m/payments/Payments_Raw_part_002.csv.gz
+            scale/10m/payments/Payments_Raw_part_003.csv.gz
+            scale/10m/payments/Payments_Raw_part_004.csv.gz
+            scale/10m/payments/Payments_Raw_part_005.csv.gz
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload 10M payments 006-010
+        uses: actions/upload-artifact@v4
+        with:
+          name: redwood-scale-10m-payments-006-010
+          path: |
+            scale/10m/payments/Payments_Raw_part_006.csv.gz
+            scale/10m/payments/Payments_Raw_part_007.csv.gz
+            scale/10m/payments/Payments_Raw_part_008.csv.gz
+            scale/10m/payments/Payments_Raw_part_009.csv.gz
+            scale/10m/payments/Payments_Raw_part_010.csv.gz
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload 10M payments 011-015
+        uses: actions/upload-artifact@v4
+        with:
+          name: redwood-scale-10m-payments-011-015
+          path: |
+            scale/10m/payments/Payments_Raw_part_011.csv.gz
+            scale/10m/payments/Payments_Raw_part_012.csv.gz
+            scale/10m/payments/Payments_Raw_part_013.csv.gz
+            scale/10m/payments/Payments_Raw_part_014.csv.gz
+            scale/10m/payments/Payments_Raw_part_015.csv.gz
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload 10M payments 016-020
+        uses: actions/upload-artifact@v4
+        with:
+          name: redwood-scale-10m-payments-016-020
+          path: |
+            scale/10m/payments/Payments_Raw_part_016.csv.gz
+            scale/10m/payments/Payments_Raw_part_017.csv.gz
+            scale/10m/payments/Payments_Raw_part_018.csv.gz
+            scale/10m/payments/Payments_Raw_part_019.csv.gz
+            scale/10m/payments/Payments_Raw_part_020.csv.gz
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload 10M payments 021-025
+        uses: actions/upload-artifact@v4
+        with:
+          name: redwood-scale-10m-payments-021-025
+          path: |
+            scale/10m/payments/Payments_Raw_part_021.csv.gz
+            scale/10m/payments/Payments_Raw_part_022.csv.gz
+            scale/10m/payments/Payments_Raw_part_023.csv.gz
+            scale/10m/payments/Payments_Raw_part_024.csv.gz
+            scale/10m/payments/Payments_Raw_part_025.csv.gz
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload 10M payments 026-027
+        uses: actions/upload-artifact@v4
+        with:
+          name: redwood-scale-10m-payments-026-027
+          path: |
+            scale/10m/payments/Payments_Raw_part_026.csv.gz
+            scale/10m/payments/Payments_Raw_part_027.csv.gz
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload 10M AR 001-005
+        uses: actions/upload-artifact@v4
+        with:
+          name: redwood-scale-10m-ar-001-005
+          path: |
+            scale/10m/ar/AR_Snapshot_Raw_part_001.csv.gz
+            scale/10m/ar/AR_Snapshot_Raw_part_002.csv.gz
+            scale/10m/ar/AR_Snapshot_Raw_part_003.csv.gz
+            scale/10m/ar/AR_Snapshot_Raw_part_004.csv.gz
+            scale/10m/ar/AR_Snapshot_Raw_part_005.csv.gz
+          retention-days: 1
+          compression-level: 0
+
+      - name: Upload 10M AR 006-009
+        uses: actions/upload-artifact@v4
+        with:
+          name: redwood-scale-10m-ar-006-009
+          path: |
+            scale/10m/ar/AR_Snapshot_Raw_part_006.csv.gz
+            scale/10m/ar/AR_Snapshot_Raw_part_007.csv.gz
+            scale/10m/ar/AR_Snapshot_Raw_part_008.csv.gz
+            scale/10m/ar/AR_Snapshot_Raw_part_009.csv.gz
+          retention-days: 1
+          compression-level: 0
