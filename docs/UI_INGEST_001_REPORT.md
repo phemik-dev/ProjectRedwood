@@ -25,8 +25,8 @@ After the browser-created run was frozen, `Validation_Truth.csv` was opened for 
 | Total_Cash | $37,274.33 | Match |
 | Open_AR | $16,215.50 | Match |
 | AR_120plus | $5,544.18 | Match |
-| Bank_Total | Not materialized | `CANONICALISATION_DEFECT` / out of current front-door canonical population |
-| ERA_to_Bank_Difference | Not materialized | `CANONICALISATION_DEFECT` / out of current front-door canonical population |
+| Bank_Total | $37,274.33 | Match in current front-door source/run adapter |
+| ERA_to_Bank_Difference | $0.00 | Match in current front-door source/run adapter |
 
 No truth value or source row was modified to obtain the matched controls.
 
@@ -47,7 +47,7 @@ No truth value or source row was modified to obtain the matched controls.
 
 ### Methodology questions
 
-- Whether Bank Deposits should become a required supporting population for this source package is a methodology/product scope decision. It is not silently treated as a reconciled bank control.
+- Bank Deposits is now a governed supporting source population and cash-to-bank control; the final browser-created trace still needs to capture that current implementation.
 
 ## Milestone decision
 
