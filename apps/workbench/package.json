@@ -8,6 +8,9 @@
     "typecheck": "node --check server.mjs && node --check store.mjs && node --check public/app.js",
     "start": "node server.mjs"
   },
+  "dependencies": {
+    "adm-zip": "^0.5.16"
+  },
   "devDependencies": {
     "typescript": "^5.9.3"
   }
