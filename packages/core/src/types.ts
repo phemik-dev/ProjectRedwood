@@ -1,5 +1,5 @@
 export type Cents = bigint;
-export type SourceType = "claims" | "payments" | "adjustments" | "ar_snapshot" | "general_ledger";
+export type SourceType = "claims" | "payments" | "adjustments" | "ar_snapshot" | "general_ledger" | "bank_deposits";
 export type CashEventType = "payer_payment" | "patient_payment" | "refund" | "recoupment" | "reversal" | "replacement_payment" | "transfer" | "unapplied_cash" | "secondary_payer_payment";
 export type AdjustmentType = "contractual_adjustment" | "write_off" | "bad_debt" | "denial" | "administrative_adjustment" | "correction" | "charity" | "price_concession" | "other";
 export type Gate = "G0" | "G1" | "G2" | "G3" | "G4" | "G5" | "G6" | "G7";
@@ -11,6 +11,7 @@ export interface CashEvent { id: string; claimId?: string; type: CashEventType; 
 export interface AdjustmentEvent { id: string; claimId?: string; type: AdjustmentType; amount: Cents; postingDate?: string; payer?: string; lineage: LineageRecord; }
 export interface Receivable { id: string; claimId?: string; snapshotDate: string; balance: Cents; ageBasis: "service_date" | "billing_date" | "claim_submission_date"; ageDays?: number; ageBucket?: string; payer?: string; provider?: string; location?: string; serviceLine?: string; lineage: LineageRecord; }
 export interface GLRecord { id: string; period: string; netPatientRevenue?: Cents; cash?: Cents; matchedCash?: Cents; ar?: Cents; badDebt?: Cents; lineage: LineageRecord; }
+export interface BankDeposit { id: string; depositDate?: string; amount: Cents; lineage: LineageRecord; }
 export interface QuarantineRecord { sourceType: SourceType; sourceRowId: string; reason: string; raw: Record<string, string>; }
 export interface ReconciliationDispositionPolicy { requireEvidence: boolean; acceptedWithExceptionMayPassG3: boolean; requireNamedReviewer: boolean; requireRationale: boolean; }
 export interface MethodProfile { id: string; name: string; version: string; status: "engineering-hypothesis-not-professionally-approved" | "professionally-approved" | "synthetic-testing-only"; arithmeticToleranceCents: Cents; professionalMaterialityCents?: Cents; ageingBasis: Receivable["ageBasis"]; recoveryMethod: "global_rate" | "age_bucket_rates" | "payer_age_matrix" | "historical_cohort_curve"; recoveryRates: Record<string, number | undefined>; reconciliationDispositionPolicy?: ReconciliationDispositionPolicy; }
@@ -20,4 +21,4 @@ export interface Reconciliation { id: string; label: string; leftDefinition: str
 export interface Finding { id: string; kind: "reconciliation" | "data_quality" | "analysis"; title: string; detail: string; status: "open" | "reviewed" | "resolved"; references: string[]; }
 export interface FindingDisposition { id: string; findingId: string; runId: string; methodProfileId: string; methodVersion: string; reviewer: string; role: string; decision: "reviewed" | "resolved" | "accepted_with_exception"; rationale: string; evidenceReferences: string[]; timestamp: string; dependencyFingerprint: string; invalidatedAt?: string; invalidationReason?: string; }
 export interface ReviewDecision { id: string; runId: string; methodProfileId: string; methodVersion: string; gate: Gate; decision: "approved" | "rejected" | "noted"; reviewer: string; role: string; rationale: string; evidenceReferences: string[]; timestamp: string; dependencyFingerprint?: string; invalidatedAt?: string; invalidationReason?: string; }
-export interface CanonicalDeal { dealId: string; claims: Claim[]; cashEvents: CashEvent[]; adjustmentEvents: AdjustmentEvent[]; receivables: Receivable[]; glRecords: GLRecord[]; quarantined: QuarantineRecord[]; }
+export interface CanonicalDeal { dealId: string; claims: Claim[]; cashEvents: CashEvent[]; adjustmentEvents: AdjustmentEvent[]; receivables: Receivable[]; glRecords: GLRecord[]; bankDeposits: BankDeposit[]; quarantined: QuarantineRecord[]; }

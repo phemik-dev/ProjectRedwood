@@ -14,7 +14,7 @@ function unique<T extends { id: string }>(items: T[], item: T, type: SourceType,
 
 export function ingestCsvSources(dealId: string, files: SourceFile[], mappingSet: MappingDecision[] = []): CanonicalDeal {
   const mappedField = (raw: CsvRow, sourceType: SourceType, canonical: string, fallback: string[]) => { const decision = mappingSet.find((item) => item.sourceType === sourceType && item.canonicalField === canonical); if (mappingSet.length > 0) return decision && decision.reviewStatus !== "rejected" ? raw[decision.sourceField] : undefined; return field(raw, fallback); };
-  const deal: CanonicalDeal = { dealId, claims: [], cashEvents: [], adjustmentEvents: [], receivables: [], glRecords: [], quarantined: [] };
+  const deal: CanonicalDeal = { dealId, claims: [], cashEvents: [], adjustmentEvents: [], receivables: [], glRecords: [], bankDeposits: [], quarantined: [] };
   const seenHashes = new Set<string>();
   for (const file of files) {
     const hash = sha256(file.content);
@@ -43,6 +43,8 @@ export function ingestCsvSources(dealId: string, files: SourceFile[], mappingSet
           const postingDate = field(raw, ["posting_date", "Posting_Date"]); if (!validDate(postingDate)) throw new Error("Invalid adjustment posting date");
           const adjustment: AdjustmentEvent = { id, claimId: field(raw, ["claim_id", "Claim_ID"]), type: (field(raw, ["adjustment_type", "type"]) as AdjustmentEvent["type"]) ?? "other", amount, postingDate, payer: field(raw, ["payer", "Payer"]), lineage: base };
           unique(deal.adjustmentEvents, adjustment, file.type, { sourceType: file.type, sourceRowId, reason: "Duplicate adjustment ID", raw });
+        } else if (file.type === "bank_deposits") {
+          const id = field(raw, ["deposit_id", "Deposit_ID"]); const amount = parseMoney(field(raw, ["amount", "Amount"])); const depositDate = field(raw, ["deposit_date", "Deposit_Date"]); if (!id || amount === undefined) throw new Error("Missing bank deposit ID or amount"); if (!validDate(depositDate)) throw new Error("Invalid bank deposit date"); unique(deal.bankDeposits, { id, depositDate, amount, lineage: base }, file.type, { sourceType: file.type, sourceRowId, reason: "Duplicate bank deposit ID", raw });
         } else if (file.type === "ar_snapshot") {
           const id = field(raw, ["receivable_id", "ar_id", "Claim_ID", "claim_id"]); const snapshotDate = mappedField(raw, file.type, "snapshot_date", ["snapshot_date", "Snapshot_Date"]); const balance = parseMoney(mappedField(raw, file.type, "ar_balance", ["balance", "open_ar", "Open AR", "Open_AR"]));
           if (!id || !snapshotDate || balance === undefined) throw new Error("Missing receivable ID, snapshot date, or balance"); if (!validDate(snapshotDate)) throw new Error("Invalid A/R snapshot date");
