@@ -3,9 +3,10 @@
 ## Executable baseline
 
 - **Integration branch:** `integration/redwood-current-programme`
-- **Baseline SHA:** `74f1643a6c41769b8166667e3f50efea11470a45`
-- **Parent implementation SHA:** `e45f272e8da551c1e32480dd297a5653bd910b9a`
-- **Remote:** `origin/integration/redwood-current-programme` at the same SHA.
+- **Executable baseline SHA:** `077930497b057c34e3dfa4423156d45f6ba2f69b`
+- **Programme-state documentation version:** `077930497b057c34e3dfa4423156d45f6ba2f69b`
+- **Implementation preservation SHA:** `e45f272e8da551c1e32480dd297a5653bd910b9a`
+- **Remote:** `origin/integration/redwood-current-programme` matched the executable baseline SHA.
 - **Main status:** deliberately not integrated. The integration branch remains divergent from `main`; a later `REDWOOD-MAIN-INTEGRATION-001` must assess that separately.
 
 | Area | Repository before baseline | Live programme state | Evidence | Resolution |

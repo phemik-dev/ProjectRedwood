@@ -6,7 +6,17 @@ Read this file, `docs/SCENARIO_IDENTITY_REGISTRY.md`, and the relevant ADR/confo
 
 ## Executable baseline
 
-Current live baseline: `integration/redwood-current-programme` at `74f1643a6c41769b8166667e3f50efea11470a45`, pushed to `origin`. `main` is intentionally not yet integrated.
+## Current executable baseline
+
+- **executable_baseline_branch:** `integration/redwood-current-programme`
+- **executable_baseline_sha:** `077930497b057c34e3dfa4423156d45f6ba2f69b`
+- **remote preservation:** `origin/integration/redwood-current-programme` matched this SHA when the baseline was established.
+- **main integrated:** no — intentionally deferred.
+
+## Programme-state document version
+
+- **programme_state_document_version:** `077930497b057c34e3dfa4423156d45f6ba2f69b`
+- **interpretation:** this identifies the durable programme-state record read before this documentation-only comparison update. It is deliberately separate from the executable baseline concept; future documentation-only commits do not redefine the executable implementation examined.
 
 ## Architecture
 
