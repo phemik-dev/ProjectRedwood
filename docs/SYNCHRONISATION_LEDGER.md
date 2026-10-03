@@ -43,6 +43,7 @@ Challenge F is frozen as a **PROVEN** migration/routing/reconciliation proof. Ru
 | E | Ownership/site context retention, separate presentation, and non-fabrication of same-store economics | **PROVEN — zero-population coverage limitation** |
 | F | PM/RCM migration, routing, and explicit provider crosswalk | **PROVEN** |
 | System | Professional Workbench and Release Governance | **PROVEN — system workflow; practitioner validation remains open** |
+| Estate | Data Estate integration | **PROVEN — source/rights/custody/adapter registry; external reacquisition remains governed** |
 
 Challenge E run `ad47195e-f0d3-4e84-b886-0f8ecbbfcd4a` retains lineaged LOC04 acquisition context, matches all ten published post-run oracle assertions, and has no reconciliation findings. Its acquired-site post-close population is zero, so it does not prove treatment of a nonzero acquired-site population.
 

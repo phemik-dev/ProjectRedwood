@@ -1,0 +1,49 @@
+{
+  "schemaVersion": "redwood.source-registry/v1",
+  "snapshotId": "redwood-source-registry-v1-initial",
+  "sourceVersions": [
+    {
+      "id": "redwood.synthetic.challenge-f@v1",
+      "sourceId": "redwood.synthetic.challenge-f",
+      "version": "v1",
+      "provenanceClass": "synthetic_owned",
+      "rights": { "use": "permitted", "retain": "permitted", "reviewRef": "Redwood-owned regression corpus" },
+      "custody": { "status": "PHYSICALLY_HELD", "evidenceRef": "docs/evidence/rr-migration-001.conformance.json", "locationRef": "Google Drive: 08_CHALLENGE_CORPUS" },
+      "reacquisition": { "mode": "none" }
+    },
+    {
+      "id": "cms.provider-service@dataset-335e5f35",
+      "sourceId": "cms.provider-service",
+      "version": "dataset-335e5f35",
+      "provenanceClass": "observed_public",
+      "rights": { "use": "permitted", "retain": "bounded_only", "reviewRef": "Historical data-estate public-source terms review required" },
+      "custody": { "status": "REACQUIRE_ON_DEMAND", "evidenceRef": "main:docs/corpus/REDWOOD_DATA_ESTATE.md" },
+      "reacquisition": { "mode": "official_api_query", "recipeRef": "main:.github/workflows/redwood-reference-cohort-build.yml", "receiptRequired": true }
+    }
+  ],
+  "artifacts": [
+    { "id": "challenge-f-crosswalk", "sourceVersionId": "redwood.synthetic.challenge-f@v1", "population": "migration_provider_crosswalk", "format": "csv", "engineEligibility": "ingestible", "adapterId": "migration-crosswalk-v1", "engineSourceType": "migration_crosswalk" },
+    { "id": "challenge-f-legacy-charges", "sourceVersionId": "redwood.synthetic.challenge-f@v1", "population": "native_transaction_charges", "format": "csv", "engineEligibility": "ingestible", "adapterId": "pm-legacy-charges-v1", "engineSourceType": "legacy_pm_charges" },
+    { "id": "challenge-f-rcm-charges", "sourceVersionId": "redwood.synthetic.challenge-f@v1", "population": "native_transaction_charges", "format": "csv", "engineEligibility": "ingestible", "adapterId": "rcm-new-charges-v1", "engineSourceType": "rcm_new_charges" },
+    { "id": "challenge-f-legacy-cash", "sourceVersionId": "redwood.synthetic.challenge-f@v1", "population": "native_transaction_cash", "format": "csv", "engineEligibility": "ingestible", "adapterId": "legacy-cash-v1", "engineSourceType": "legacy_cash" },
+    { "id": "challenge-f-new-cash", "sourceVersionId": "redwood.synthetic.challenge-f@v1", "population": "native_transaction_cash", "format": "tsv", "engineEligibility": "ingestible", "adapterId": "new-cash-v1", "engineSourceType": "new_cash" },
+    { "id": "cms-provider-service-reference", "sourceVersionId": "cms.provider-service@dataset-335e5f35", "population": "public_provider_service_reference", "format": "json", "engineEligibility": "reference_only", "adapterId": "cms-provider-service-v1" }
+  ],
+  "adapters": [
+    { "id": "migration-crosswalk-v1", "version": "1.0.0", "formats": ["csv"], "networkAccess": "forbidden" },
+    { "id": "pm-legacy-charges-v1", "version": "1.0.0", "formats": ["csv"], "networkAccess": "forbidden" },
+    { "id": "rcm-new-charges-v1", "version": "1.0.0", "formats": ["csv"], "networkAccess": "forbidden" },
+    { "id": "legacy-cash-v1", "version": "1.0.0", "formats": ["csv"], "networkAccess": "forbidden" },
+    { "id": "new-cash-v1", "version": "1.0.0", "formats": ["tsv"], "networkAccess": "forbidden" },
+    { "id": "cms-provider-service-v1", "version": "1.0.0", "formats": ["json"], "networkAccess": "forbidden" }
+  ],
+  "routingPolicies": [
+    {
+      "id": "pm-rcm-native-cohort-v1",
+      "requiresArtifactIds": ["challenge-f-crosswalk", "challenge-f-legacy-charges", "challenge-f-rcm-charges", "challenge-f-legacy-cash", "challenge-f-new-cash"],
+      "supersedesPopulations": ["derived_transaction_claims", "derived_transaction_cash"],
+      "retainsEngineSourceTypes": ["ar_snapshot", "general_ledger", "bank_deposits", "provider_roster", "service_line_history", "payer_contract_reference", "ownership_site_history"],
+      "crosswalkPolicy": "system_qualified_explicit"
+    }
+  ]
+}

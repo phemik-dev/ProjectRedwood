@@ -5,7 +5,9 @@
   "packageManager": "pnpm@12.3.4",
   "scripts": {
     "build": "pnpm --filter @redwood/core build && pnpm --filter @redwood/workbench build",
-    "test": "pnpm --filter @redwood/core test",
+    "test": "pnpm --filter @redwood/core test && node --test test/source-registry.test.mjs",
+    "test:source-registry": "node --test test/source-registry.test.mjs",
+    "validate:source-registry": "node scripts/validate-source-registry.mjs data-estate/source-registry.v1.json",
     "typecheck": "pnpm --filter @redwood/core typecheck && pnpm --filter @redwood/workbench typecheck",
     "demo": "pnpm --filter @redwood/core demo",
     "heldout": "pnpm --filter @redwood/core heldout"

@@ -1,0 +1,32 @@
+{
+  "policyVersion": "hiveforge.intent-reality.v1",
+  "work": {
+    "id": "REDWOOD-SOURCE-REGISTRY-IMPLEMENTATION-001",
+    "title": "Declarative source registry validation and compilation",
+    "scope": "substantial",
+    "authority": ["Direct user request to implement a minimal declarative source registry, schema, and deterministic validation tests"]
+  },
+  "intent": {
+    "productGoal": "Preserve governed source provenance and admissibility before analytical intake without making acquisition part of the analytical engine.",
+    "capability": "Validate and deterministically compile a versioned source registry into a frozen, local intake manifest.",
+    "architecturalIntent": ["Registry validation and compilation are standalone offline scripts.", "Acquisition, rights resolution, and network access remain outside the analytical engine.", "Population-specific routing remains declarative and preserves independent control populations."],
+    "invariants": ["The registry module makes no network requests.", "Only explicitly ingestible artifacts resolve into an intake manifest.", "Registry policy never creates balancing entries or alters canonical financial calculations."],
+    "acceptanceEvidence": ["node scripts/validate-source-registry.mjs data-estate/source-registry.v1.json", "node --test test/source-registry.test.mjs", "pnpm test", "pnpm typecheck"]
+  },
+  "execution": {
+    "decisions": [
+      {"decision": "Place registry compiler and validator under root scripts rather than analytical core.", "rationale": "Preserves the boundary that the analytical engine consumes resolved local artifacts only."},
+      {"decision": "Use an immutable snapshot ID and deterministic compiled-policy hash.", "rationale": "Makes registry selection auditable and stable across ordering changes."}
+    ],
+    "observedBehaviour": ["The canonical registry validates and compiles to SHA-256 9651d7a218644fbb69916375ba26900e2c4bfeafc9f46fd065a98fe31224ce12.", "Six offline registry tests passed, including rejection of rights/custody conflicts, dangling adapters, unknown routed artifacts, non-ingestible artifacts, and network-enabled adapters.", "Full test suite and typechecks passed."],
+    "evidence": [
+      {"kind": "test", "reference": "node --test test/source-registry.test.mjs", "result": "6 passed, 0 failed."},
+      {"kind": "test", "reference": "pnpm test", "result": "31 core tests and 6 registry tests passed."},
+      {"kind": "test", "reference": "pnpm typecheck", "result": "Core TypeScript and workbench checks passed."},
+      {"kind": "artifact", "reference": "data-estate/source-registry.v1.json", "result": "Canonical registry validates offline with a deterministic compiled-policy hash."}
+    ]
+  },
+  "conformance": {"status": "conforms-with-understood-divergence", "divergences": [{"expected": "A Drive-authoritative source register with durable acquisition receipts.", "observed": "This repository implementation contains only controlled metadata and no acquisition/custody executor or Drive synchronization.", "classification": "architectural-weakness", "status": "understood"}]},
+  "learning": {"recurringPattern": "Source filenames and run hashes alone do not govern rights, custody, or adapter authority.", "improvementProposal": "Add a separately authorized registry snapshot publication and receipt-binding workflow outside the analytical engine.", "durableKnowledge": ["Registry snapshots should be immutable evidence bindings.", "CI/acquisition recipes are not proof of durable custody without an independently recorded durable location and receipt."]},
+  "completion": {"capabilitySatisfied": true, "invariantsPreserved": true, "evidenceSufficient": true, "reviewRequired": true}
+}
