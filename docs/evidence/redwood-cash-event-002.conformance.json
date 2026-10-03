@@ -1,0 +1,97 @@
+{
+  "policyVersion": "hiveforge.intent-reality.v1",
+  "work": {
+    "id": "redwood-cash-event-002",
+    "title": "Challenge B cash-event semantics rerun and oracle-availability boundary",
+    "scope": "substantial",
+    "authority": [
+      "Direct user instruction: proceed to the next existing-corpus priority.",
+      "Direct user decision: use 2026-08-31 as Challenge B subsequentCashEnd."
+    ]
+  },
+  "intent": {
+    "productGoal": "Preserve healthcare cash-event source semantics and malformed financial evidence without silent normalization or unsupported conclusions.",
+    "capability": "Rerun the staged Challenge B corpus under immutable scope, confirm typed payer/patient/partial/recoupment event behavior and malformed-adjustment quarantine, retain controls and gate authority, and determine whether a post-run truth contract exists.",
+    "architecturalIntent": [
+      "Source event labels and canonical cash-event types remain separately observable.",
+      "Malformed source data remains quarantined rather than inferred into adjustment events.",
+      "Absence of a truth contract is an evidence limitation, not a prompt to manufacture expected output."
+    ],
+    "invariants": [
+      "The A/R difference remains visible and release stays blocked.",
+      "No source identifiers or dates are invented for malformed adjustment rows.",
+      "Recoupment is not relabeled as reversal."
+    ],
+    "acceptanceEvidence": [
+      "Run 1ddd85d4-7915-46c6-96b4-78b0ef9ff5ba from unchanged Challenge B archive.",
+      "Run-bound cash mix, quarantine, reconciliation, and gate observations.",
+      "Post-run complete archive inventory confirming no truth-oracle contract is supplied."
+    ]
+  },
+  "execution": {
+    "decisions": [
+      {
+        "decision": "Treat Challenge B as a cash-event semantic proof rather than a provider-departure or reversal scenario.",
+        "rationale": "The actual source labels establish payer, patient, partial-payment, and recoupment behavior; no reversal label is present."
+      },
+      {
+        "decision": "Record oracle absence as a claim boundary rather than create comparison values.",
+        "rationale": "The extracted package contains no truth-oracle artifact, expected-results file, or manifest."
+      }
+    ],
+    "observedBehaviour": [
+      "event_type mapped authoritatively to payment_type and the cash mix preserved payer, patient, partial-payment, and negative recoupment events.",
+      "Seven malformed adjustment rows remained quarantined for Missing adjustment ID; no financial evidence was normalized.",
+      "Three cash controls matched, the $5,965.03 A/R difference remained visible, G4 passed, and G7 remained blocked.",
+      "The full post-run archive extraction contains seven source files and no truth-oracle contract."
+    ],
+    "evidence": [
+      {
+        "kind": "trace",
+        "reference": "Run 1ddd85d4-7915-46c6-96b4-78b0ef9ff5ba",
+        "result": "Run binds event mapping, cash mix, quarantine, reconciliation, finding, gates, and draft workbook."
+      },
+      {
+        "kind": "artifact",
+        "reference": ".tmp/Redwood_Challenge_B_provider_departure_v0.1.zip",
+        "result": "Unchanged staged archive SHA-256 debc8ab87800f8ca4d440f8f073c20c5df7df4afdd31a68d6704a2e9121b066d."
+      },
+      {
+        "kind": "trace",
+        "reference": ".tmp/challenge-b-inspection/",
+        "result": "Complete seven-file extraction contains no Validation_Truth.csv, expected-results file, manifest, or other truth contract."
+      },
+      {
+        "kind": "artifact",
+        "reference": "docs/REDWOOD_CASH_EVENT_002_REPORT.md",
+        "result": "Records source-semantic proof, retained difference/quarantine, draft export, and oracle-availability boundary."
+      }
+    ]
+  },
+  "conformance": {
+    "status": "conforms-with-understood-divergence",
+    "divergences": [
+      {
+        "expected": "A challenge closure can include a post-run truth-oracle comparison.",
+        "observed": "Challenge B supplies no truth-oracle artifact or expected-results contract in the unchanged archive.",
+        "classification": "missing-test",
+        "status": "understood"
+      }
+    ]
+  },
+  "learning": {
+    "recurringPattern": "Source-semantic proof packages may contain sufficient deterministic evidence while omitting an independent aggregate-output oracle.",
+    "improvementProposal": "Author a separate Challenge B truth contract before claiming external oracle-verified aggregate output.",
+    "durableKnowledge": [
+      "Challenge B proves recoupment, not reversal, behavior.",
+      "Malformed adjustments retain an evidence/quarantine boundary even when cash controls match.",
+      "Oracle absence limits only the oracle claim; it does not erase observed source-semantic, control, or governance evidence."
+    ]
+  },
+  "completion": {
+    "capabilitySatisfied": true,
+    "invariantsPreserved": true,
+    "evidenceSufficient": true,
+    "reviewRequired": true
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "proofId": "PROF-NORM-PROVIDER-001",
+  "kind": "authored-professional-normalization-precondition",
+  "intakeDisposition": "excluded_post_run_proof_artifact",
+  "subject": { "dimension": "provider", "id": "PRV-PROF-001" },
+  "initialTruthState": "review_required",
+  "permittedTerminalTruthStates": ["approved_for_normalization", "rejected"],
+  "professionalApprovalRecord": null,
+  "requiredApprovalSemantics": [
+    "exact run, method profile/version, and dependency fingerprint",
+    "named authorized reviewer, rationale, and evidence references",
+    "replacement capacity, transition, attribution, methodology, affected population, and amount",
+    "separate adjustment record that never overwrites observed canonical data"
+  ],
+  "invalidationAssertions": [
+    "A changed source, mapping, recovery assumption, scope, method, engine, or finding fingerprint invalidates a later decision.",
+    "An invalidated decision ceases to be active and the displayed deterministic state returns to review_required.",
+    "A successor run requires a newly authored professional decision."
+  ]
+}

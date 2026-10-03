@@ -1,0 +1,24 @@
+{
+  "policyVersion": "hiveforge.intent-reality.v1",
+  "work": {
+    "id": "prof-norm-provider-001",
+    "title": "Authored provider professional-normalization precondition fixture",
+    "scope": "substantial",
+    "authority": ["Direct user request to implement authored professional normalization proof fixtures, documentation, and feasible tests without creating professional approvals."]
+  },
+  "intent": {
+    "productGoal": "Make the evidence and invalidation boundary for a future provider normalization explicit without converting observed provider-departure evidence into an autonomous adjustment.",
+    "capability": "Provide a deterministic authored provider fixture with post-run truth assertions and testable negative approval semantics.",
+    "architecturalIntent": ["Observed provider-departure evidence and professional normalization remain separate objects.", "Truth artifacts are excluded from intake.", "A future decision must be exact-run and fingerprint bound."],
+    "invariants": ["Automatic normalization remains zero.", "No professional approval record is authored.", "Claims, cash, A/R, controls, gates, and release authority remain unchanged."],
+    "acceptanceEvidence": ["Fixture-contract regression test.", "Post-run truth contract and proof semantics manifest.", "Future dedicated decision API and invalidation integration test before any approval claim."]
+  },
+  "execution": {
+    "decisions": [{"decision": "Implement a precondition fixture rather than a professional approval.", "rationale": "The existing API lacks normalization-specific authority, subject, amount, and proof semantics."}],
+    "observedBehaviour": ["Not yet executed as a browser/API proof; fixture-level assertions establish intended evidence and negative approval boundaries."],
+    "evidence": [{"kind": "test", "reference": "pnpm --filter @redwood/core test", "result": "30/30 tests passed, including PROF-NORM-PROVIDER-001 deterministic review-required evidence and zero-approval assertions."}, {"kind": "artifact", "reference": "fixtures/prof-norm-provider-001", "result": "Authored fixture declares review-required provider evidence, zero automatic normalization, zero approval records, and future invalidation assertions."}]
+  },
+  "conformance": {"status": "incomplete", "divergences": [{"expected": "A future normalization decision can be persisted, reviewed, and invalidated through a dedicated API.", "observed": "Only generic gate decisions exist; no normalization decision API has been implemented.", "classification": "architectural-weakness", "status": "open"}]},
+  "learning": {"recurringPattern": "Factual provider departure evidence does not establish replacement capacity, attribution, or professional normalization methodology.", "improvementProposal": "Implement a separate normalization-decision entity only after explicit authority and API contract approval.", "durableKnowledge": ["A G5 gate decision is not a normalization approval.", "Invalidated decisions must return to deterministic evidence state and never carry an adjustment forward."]},
+  "completion": {"capabilitySatisfied": true, "invariantsPreserved": true, "evidenceSufficient": false, "reviewRequired": true}
+}

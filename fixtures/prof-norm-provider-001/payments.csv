@@ -1,0 +1,4 @@
+payment_id,claim_id,payment_date,amount,payer,event_type
+PNP-P001,PNP-001,2026-04-15,800.00,Medicare,PAYER_PAYMENT
+PNP-P002,PNP-002,2026-05-01,1600.00,Medicare,PAYER_PAYMENT
+PNP-P003,PNP-003,2026-05-10,720.00,Commercial,PAYER_PAYMENT

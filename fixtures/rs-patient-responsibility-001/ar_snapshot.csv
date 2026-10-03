@@ -1,0 +1,2 @@
+receivable_id,claim_id,snapshot_date,balance,age_basis,age_days,age_bucket,payer
+AR1,PR2,2026-06-30,150.00,service_date,15,0-30,Patient

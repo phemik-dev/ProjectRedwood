@@ -1,0 +1,2 @@
+receivable_id,claim_id,snapshot_date,balance,age_basis,age_days,age_bucket,provider,location,service_line
+D003,D003,2026-06-30,0.00,service_date,15,0-30,PRV-DEP,LOC01,Cardiology

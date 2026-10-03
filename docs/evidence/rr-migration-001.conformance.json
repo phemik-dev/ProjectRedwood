@@ -1,0 +1,93 @@
+{
+  "policyVersion": "hiveforge.intent-reality.v1",
+  "work": {
+    "id": "rr-migration-001",
+    "title": "PM/RCM migration with explicit provider crosswalk and independent control retention",
+    "scope": "substantial",
+    "authority": [
+      "Direct user decision: freeze RR-MIGRATION-001 as PROVEN and canonize population-specific source supersession."
+    ]
+  },
+  "intent": {
+    "productGoal": "Transform unseen physician-group source files into a lineaged canonical QoR model and formula-driven draft work product without manual rebuilding or forced financial balance.",
+    "capability": "Treat a complete native PM/RCM cohort as authoritative for duplicated transaction populations, resolve providers only through its explicit crosswalk, retain independent root controls, reconcile those controls independently, and maintain draft-versus-release gate authority.",
+    "architecturalIntent": [
+      "Source supersession is evaluated per financial population, not by ZIP folder or package membership.",
+      "Native provider identity is system-qualified and authoritative only through the supplied explicit crosswalk.",
+      "Independent A/R, GL, bank, and reference controls survive native transaction supersession and remain run-bound evidence."
+    ],
+    "invariants": [
+      "Unreconciled differences are surfaced and never balanced by an inferred or hidden entry.",
+      "No provider identity is resolved by display name, unqualified identifier, or inferred normalization when an explicit crosswalk is absent.",
+      "G3/G4 calculation success does not confer G7 release authority."
+    ],
+    "acceptanceEvidence": [
+      "Run 3f1715a9-4c60-4097-bb11-d141f29b3d04 from the unchanged staged Challenge F ZIP.",
+      "Run-bound reconciliation, migration-coverage, and gate observations recorded in docs/RR_MIGRATION_001_REPORT.md.",
+      "Source-router regression test and ADR-006 router contract."
+    ]
+  },
+  "execution": {
+    "decisions": [
+      {
+        "decision": "Freeze the semantic proof as RR-MIGRATION-001 rather than treat Challenge F as its durable identity.",
+        "rationale": "Corpus letters are transport labels; the semantic capability and immutable run/source binding are the auditable proof identity."
+      },
+      {
+        "decision": "Make source supersession population-specific in the ingestion/router contract.",
+        "rationale": "Native transactions replace duplicate claims/payments, while independent A/R, GL, bank, and reference controls remain necessary for a non-forced reconciliation proof."
+      }
+    ],
+    "observedBehaviour": [
+      "The rerun accepted all four native populations with separate LEGACY_PM and NEW_RCM attribution, no rejected rows, and complete 24-entry crosswalk coverage.",
+      "All cash-to-GL, ERA-to-bank, matched-cash-to-GL, and A/R-to-GL controls matched with zero difference.",
+      "G3 and G4 passed while G7 remained blocked by G0, G2, G5, and G6; the workbench compiled a draft workbook over HTTP 200."
+    ],
+    "evidence": [
+      {
+        "kind": "trace",
+        "reference": "Run 3f1715a9-4c60-4097-bb11-d141f29b3d04",
+        "result": "Four independent reconciliation controls matched at $0.00 difference; zero open findings; G3 and G4 passed."
+      },
+      {
+        "kind": "artifact",
+        "reference": ".tmp/Redwood_Challenge_F_pm_rcm_migration_v0.1.zip",
+        "result": "Unchanged staged archive SHA-256 ebe4117ea4ee02c1982613a914f1e38793d0f03cf728a4f59053b5b1fb87575a."
+      },
+      {
+        "kind": "artifact",
+        "reference": "docs/RR_MIGRATION_001_REPORT.md",
+        "result": "Records source hashes, native contributions, crosswalk coverage, reconciliation controls, and gated-export outcome."
+      },
+      {
+        "kind": "test",
+        "reference": "apps/workbench/source-routing.test.mjs",
+        "result": "Regression proof requires native migration sources to supersede only duplicate root claims/payments while retaining A/R, GL, bank, and reference controls."
+      },
+      {
+        "kind": "artifact",
+        "reference": "docs/architecture/decisions/ADR-006-population-specific-source-supersession.md",
+        "result": "Accepted router contract establishes the population-specific supersession rule and explicit-crosswalk authority boundary."
+      }
+    ]
+  },
+  "conformance": {
+    "status": "conforms",
+    "divergences": []
+  },
+  "learning": {
+    "recurringPattern": "Folder-wide routing decisions conflate duplicate transaction populations with independent financial controls.",
+    "improvementProposal": null,
+    "durableKnowledge": [
+      "Native PM/RCM source files may replace duplicate transactions without displacing root A/R, GL, bank, or reference controls.",
+      "Crosswalk authority is system-qualified; NEW_RCM identifiers retain the supplied N- prefix and are not display-name candidates.",
+      "A complete deterministic migration proof may support G3/G4 while governance gates still limit output to a draft workbook."
+    ]
+  },
+  "completion": {
+    "capabilitySatisfied": true,
+    "invariantsPreserved": true,
+    "evidenceSufficient": true,
+    "reviewRequired": false
+  }
+}

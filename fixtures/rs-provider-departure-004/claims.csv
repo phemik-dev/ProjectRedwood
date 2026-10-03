@@ -1,0 +1,6 @@
+claim_id,service_date,billed,allowed,provider,location,service_line
+D001,2026-04-15,1000.00,800.00,PRV-DEP,LOC01,Cardiology
+D002,2026-05-01,2000.00,1600.00,PRV-DEP,LOC01,Cardiology
+D003,2026-06-15,1500.00,1200.00,PRV-DEP,LOC01,Cardiology
+D004,2026-07-10,3000.00,2400.00,PRV-DEP,LOC01,Cardiology
+A001,2026-05-10,900.00,720.00,PRV-ACTIVE,LOC01,Primary Care

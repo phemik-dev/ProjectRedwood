@@ -1,0 +1,25 @@
+{
+  "proofId": "PROF-NORM-PAYER-001",
+  "kind": "authored-professional-normalization-precondition",
+  "intakeDisposition": "excluded_post_run_proof_artifact",
+  "subject": { "dimension": "payer", "rawIds": ["Atlas Commercial", "State Medicaid"] },
+  "initialTruthState": "evidence_only",
+  "permittedTerminalTruthStates": [],
+  "professionalApprovalRecord": null,
+  "blockingPreconditions": [
+    "No payer canonicalization/crosswalk authority is implemented.",
+    "The payer contract reference is context only and does not establish causation.",
+    "No professional normalization approval may be authored from this fixture."
+  ],
+  "requiredFutureApprovalSemantics": [
+    "raw payer to canonical payer crosswalk with rule, version, authority, and evidence",
+    "applicable contract period and direct causation evidence",
+    "exact run, method profile/version, dependency fingerprint, named reviewer, rationale, evidence, methodology, affected population, and amount",
+    "separate adjustment record that never overwrites observed canonical data"
+  ],
+  "invalidationAssertions": [
+    "A future decision must invalidate after source, payer mapping/crosswalk, recovery assumption, scope, method, engine, or finding changes.",
+    "An invalidated future decision ceases to be active and the displayed deterministic state returns to evidence_only.",
+    "A successor run requires a newly authored professional decision."
+  ]
+}

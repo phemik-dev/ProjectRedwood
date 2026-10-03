@@ -1,0 +1,111 @@
+{
+  "policyVersion": "hiveforge.intent-reality.v1",
+  "work": {
+    "id": "rs-provider-departure-003",
+    "title": "Authorized subsequent-cash window correction and Challenge D governed rerun",
+    "scope": "substantial",
+    "authority": [
+      "Direct user decision: use immutable run-scope subsequentCashEnd.",
+      "Direct user decision: use 2026-08-31 for Challenge D and authorize correction, unchanged-corpus rerun, and oracle comparison."
+    ]
+  },
+  "intent": {
+    "productGoal": "Bound post-valuation collection observation by an explicit engagement scope while preserving lineaged evidence, unreconciled differences, and release governance.",
+    "capability": "Require and persist a subsequentCashEnd scope value; include cash only after valuation and on or before that date; disclose the value in intake and workbook; and reproduce Challenge D's expected subsequent-cash result in a new immutable run.",
+    "architecturalIntent": [
+      "The observation window is engagement-specific factual scope, not a global default or professional recovery assumption.",
+      "Scope changes are immutable run inputs and participate in decision dependency fingerprints.",
+      "The subsequent-cash metric remains separate from observed cash, reconciliation controls, and professional judgment."
+    ],
+    "invariants": [
+      "Unreconciled A/R-to-GL differences remain visible and are never force-balanced.",
+      "The correction does not create release authority or a professional Revenue Sustainability adjustment.",
+      "Existing persisted runs retain their prior immutable scope and are not retroactively altered."
+    ],
+    "acceptanceEvidence": [
+      "Core regression suite including the window-boundary test.",
+      "Rebuilt workbench intake exposes the required subsequent cash window field.",
+      "Run 34976659-a74d-4aa8-b927-c84a452dcafd and all nine post-run Challenge D oracle comparisons."
+    ]
+  },
+  "execution": {
+    "decisions": [
+      {
+        "decision": "Require subsequentCashEnd in DealScope for newly created scoped analyses.",
+        "rationale": "An upper observation bound must be explicit and run-bound rather than inferred from a global or open-ended rule."
+      },
+      {
+        "decision": "Filter subsequent cash with valuationDate < paymentDate <= subsequentCashEnd.",
+        "rationale": "This preserves the lower valuation cutoff and applies the authorized upper boundary without changing raw cash or reconciliation populations."
+      },
+      {
+        "decision": "Restart the existing workbench after building the modified core and web assets.",
+        "rationale": "The existing GUI must serve the rebuilt server and intake asset; starting an unrelated replacement server would not update it."
+      }
+    ],
+    "observedBehaviour": [
+      "The rebuilt workbench served the required subsequentCashEnd intake field and persisted 2026-08-31 in the rerun scope.",
+      "The new run reported $4,312.15 subsequent cash, matching the Challenge D window-bound oracle value; all eight other expected measures also matched.",
+      "The draft workbook recorded the window in its Assumptions sheet, while G7 remained blocked and the existing A/R finding remained visible.",
+      "James Kader, CFO, recorded a run-bound G5 noted decision with roster, normalization, run, and report evidence; it did not approve an adjustment or release."
+    ],
+    "evidence": [
+      {
+        "kind": "test",
+        "reference": "pnpm --filter @redwood/core test",
+        "result": "21 tests passed, including the subsequent-cash boundary regression that excludes an event after the configured end date."
+      },
+      {
+        "kind": "test",
+        "reference": "pnpm --filter @redwood/core typecheck; pnpm --filter @redwood/workbench typecheck; node --test apps/workbench/source-routing.test.mjs",
+        "result": "Core and workbench typechecks passed; source-router regression passed 2/2."
+      },
+      {
+        "kind": "artifact",
+        "reference": "docs/architecture/decisions/ADR-007-subsequent-cash-run-window.md",
+        "result": "Accepted contract defines the immutable factual scope boundary and its consequences."
+      },
+      {
+        "kind": "trace",
+        "reference": "Run 34976659-a74d-4aa8-b927-c84a452dcafd",
+        "result": "All nine Challenge D expected measures matched; scope records subsequentCashEnd 2026-08-31; G4 passed and G7 stayed blocked."
+      },
+      {
+        "kind": "artifact",
+        "reference": ".tmp/redwood-34976659-a74d-4aa8-b927-c84a452dcafd.xlsx",
+        "result": "HTTP 200 draft workbook records the subsequent cash window in Assumptions."
+      },
+      {
+        "kind": "review",
+        "reference": "Decision b04c2743-9e44-4f0e-b4a5-5e7c51f8c44a on run 34976659-a74d-4aa8-b927-c84a452dcafd",
+        "result": "James Kader, CFO, recorded a G5 noted decision with explicit roster, normalization, run, and report evidence; it left G5 open and did not authorize adjustment or release."
+      }
+    ]
+  },
+  "conformance": {
+    "status": "conforms-with-understood-divergence",
+    "divergences": [
+      {
+        "expected": "A hidden-oracle comparison is inspected only after execution.",
+        "observed": "The expected-results file was accessible during the earlier diagnosis, and the user explicitly authorized the correcting date before this rerun.",
+        "classification": "other",
+        "status": "understood"
+      }
+    ]
+  },
+  "learning": {
+    "recurringPattern": "A valuation cutoff is a lower boundary, not a complete post-valuation observation-period contract.",
+    "improvementProposal": null,
+    "durableKnowledge": [
+      "Subsequent-cash windows are factual engagement scope and must be explicit, immutable, and visible in exports.",
+      "A correction to a non-control analysis metric must not remove unrelated findings or advance release gates.",
+      "A regression against a known oracle is strong correction evidence but is not a blinded held-out acceptance proof."
+    ]
+  },
+  "completion": {
+    "capabilitySatisfied": true,
+    "invariantsPreserved": true,
+    "evidenceSufficient": true,
+    "reviewRequired": true
+  }
+}

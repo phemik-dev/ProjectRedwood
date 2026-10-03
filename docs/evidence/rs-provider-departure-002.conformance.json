@@ -1,0 +1,107 @@
+{
+  "policyVersion": "hiveforge.intent-reality.v1",
+  "work": {
+    "id": "rs-provider-departure-002",
+    "title": "Provider-departure evidence and governed Revenue Sustainability run",
+    "scope": "substantial",
+    "authority": [
+      "Direct user instruction: execute the next Revenue Sustainability/provider-departure run.",
+      "Project Redwood invariant: unreconciled differences must remain visible and must never be force-balanced."
+    ]
+  },
+  "intent": {
+    "productGoal": "Present lineaged provider-departure evidence within a run-bound QoR analysis while preserving independent controls and professional-release authority.",
+    "capability": "Ingest the staged provider-departure corpus, expose PRV-004 in run-bound provider sustainability analysis, preserve its financial findings and gates, compile only a governed draft workbook, and compare observed output with the post-run oracle.",
+    "architecturalIntent": [
+      "Provider-departure evidence, deterministic calculations, and professional judgment remain distinct objects.",
+      "G4 deterministic completion does not override reconciliation, mapping, scope, or professional-review gates.",
+      "Post-run oracle comparison detects divergence without rewriting an executed run or its source evidence."
+    ],
+    "invariants": [
+      "The A/R-to-GL difference and quarantined adjustment remain visible.",
+      "No reviewer decision, automatic normalization, or client-release authority is created by the deterministic run.",
+      "Observed divergence is recorded for correction rather than normalized."
+    ],
+    "acceptanceEvidence": [
+      "Run 7237d02f-548f-4d1d-8177-334ccb31944f from the unchanged staged Challenge D corpus.",
+      "Run-bound provider sustainability, reconciliation, gate, finding, quarantine, and draft-workbook observations.",
+      "Post-run expected-results comparison and known-divergence record."
+    ]
+  },
+  "execution": {
+    "decisions": [
+      {
+        "decision": "Do not create a reviewer approval or professional assumption during the run.",
+        "rationale": "The user authorized execution, not a professional conclusion; authority boundaries must remain intact."
+      },
+      {
+        "decision": "Record the subsequent-cash discrepancy as a defect rather than altering the run or truth comparison.",
+        "rationale": "The engine lacks an explicit observation-window boundary, so changing evidence or applying an adjustment would conceal the divergence."
+      }
+    ],
+    "observedBehaviour": [
+      "PRV-004 was present in run-bound providerSustainability analysis with $17,331.26 gross charge, 1.0 FTE, and a 2026-04-14 end date before the 2026-06-30 valuation date.",
+      "One A/R-to-GL finding of $4,539.31 and one Missing adjustment amount quarantine remained visible; G3 and G7 were blocked while G4 passed.",
+      "Eight expected-result measures matched; subsequent cash was $4,539.31 rather than the oracle's $4,312.15 through 2026-08-31 because analytics has no upper observation-window boundary."
+    ],
+    "evidence": [
+      {
+        "kind": "trace",
+        "reference": "Run 7237d02f-548f-4d1d-8177-334ccb31944f",
+        "result": "Provider-departure evidence, visible finding/quarantine, gate matrix, and deterministic G4 pass are bound to one run."
+      },
+      {
+        "kind": "artifact",
+        "reference": ".tmp/Redwood_Challenge_D_provider_departure_fte_v0.1.zip",
+        "result": "Staged input SHA-256 6d358a0ab03b5919305f65a159dae0a4c158eb68bfb5f9cccd2b3113454c9604."
+      },
+      {
+        "kind": "artifact",
+        "reference": "docs/RS_PROVIDER_DEPARTURE_002_REPORT.md",
+        "result": "Records observed provider evidence, controls, gates, workbook, and oracle comparison."
+      },
+      {
+        "kind": "trace",
+        "reference": ".tmp/challenge-d.expected_results.json",
+        "result": "Eight post-run numeric assertions matched; the subsequent-cash assertion diverged and is recorded as an open defect."
+      },
+      {
+        "kind": "artifact",
+        "reference": "docs/operations/known-divergences/rs-provider-departure-002-subsequent-cash-window.md",
+        "result": "Records expected state, observed state, cause, preserved invariants, and required corrective work."
+      }
+    ]
+  },
+  "conformance": {
+    "status": "incomplete",
+    "divergences": [
+      {
+        "expected": "Subsequent cash is measured only from valuation through the Challenge D window end of 2026-08-31.",
+        "observed": "analytics.subsequentCash includes every payment after valuation and reports $4,539.31 rather than $4,312.15.",
+        "classification": "defect",
+        "status": "open"
+      },
+      {
+        "expected": "A hidden-oracle comparison is inspected only after run execution.",
+        "observed": "The locally accessible expected-results file was inspected before this run; no implementation or input was changed after inspection.",
+        "classification": "other",
+        "status": "understood"
+      }
+    ]
+  },
+  "learning": {
+    "recurringPattern": "A valuation cutoff alone does not define an upper observation window for subsequent collections.",
+    "improvementProposal": "Add an explicitly authorized subsequent-cash window to the source-of-truth scope or Method Profile, then bind and test it per run.",
+    "durableKnowledge": [
+      "Provider-departure evidence can be carried into run-bound analysis without creating a professional adjustment.",
+      "A deterministic G4 pass and a draft workbook coexist with open scope, source-quality, mapping, reconciliation, professional-review, and release gates.",
+      "Challenge D cannot close the full provider-departure proof until the subsequent-cash observation-window defect is corrected and rerun."
+    ]
+  },
+  "completion": {
+    "capabilitySatisfied": false,
+    "invariantsPreserved": true,
+    "evidenceSufficient": true,
+    "reviewRequired": true
+  }
+}

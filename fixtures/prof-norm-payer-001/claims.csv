@@ -1,0 +1,5 @@
+claim_id,service_date,billed,allowed,payer,provider,location,service_line
+PNY-001,2025-06-15,1500.00,1200.00,Atlas Commercial,PRV-PAYER,LOC-PAYER,Primary Care
+PNY-002,2025-06-16,500.00,250.00,State Medicaid,PRV-PAYER,LOC-PAYER,Primary Care
+PNY-003,2026-06-15,500.00,400.00,Atlas Commercial,PRV-PAYER,LOC-PAYER,Primary Care
+PNY-004,2026-06-16,1500.00,750.00,State Medicaid,PRV-PAYER,LOC-PAYER,Primary Care

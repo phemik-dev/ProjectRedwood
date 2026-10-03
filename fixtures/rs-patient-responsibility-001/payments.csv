@@ -1,0 +1,5 @@
+payment_id,claim_id,payment_date,amount,payer,event_type
+X1,PR1,2025-06-20,700.00,Atlas Commercial,PAYER_PAYMENT
+X2,PR1,2025-06-25,100.00,Patient,PATIENT_PAYMENT
+X3,PR2,2026-06-20,600.00,Atlas Commercial,PAYER_PAYMENT
+X4,PR2,2026-06-25,50.00,Patient,PATIENT_PAYMENT

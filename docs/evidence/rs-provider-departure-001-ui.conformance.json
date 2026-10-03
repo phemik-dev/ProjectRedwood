@@ -1,0 +1,37 @@
+{
+  "policyVersion": "hiveforge.intent-reality.v1",
+  "work": {
+    "id": "rs-provider-departure-001-ui",
+    "title": "Readable provider sustainability Analyze view",
+    "scope": "substantial",
+    "authority": ["Direct user instruction: make the G4 Analyze page easy to read", "RS-PROVIDER-DEPARTURE-001 semantic proof boundary"]
+  },
+  "intent": {
+    "productGoal": "Make run-bound provider-departure evidence understandable without converting it into an unapproved QoR conclusion.",
+    "capability": "Present observed billed concentration alongside provider roster FTE, dates, a valuation-relative status, and source-row trace in G4 Analyze.",
+    "architecturalIntent": ["Use the existing run-bound analysis.providerSustainability and provider roster data; do not introduce a separate calculation system.", "Separate observed evidence, calculated values, and professional interpretation in the visual hierarchy."],
+    "invariants": ["Provider departure is presented as review evidence, not an automatic QoR adjustment or professional conclusion.", "The unresolved reconciliation difference and release authority remain unaffected.", "Every roster-status row remains traceable to its source file and row."],
+    "acceptanceEvidence": ["Workbench JavaScript syntax check and asset build.", "Browser observation of G4 Analyze at 1920px width for run 573bc172-0c62-41a7-af87-84171b94280e.", "Run API evidence demonstrating the providerSustainability data is bound to the same run."]
+  },
+  "execution": {
+    "decisions": [
+      {"decision": "Replace dense provider concentration cards with a readable provider-sustainability table before retaining supporting concentration summaries.", "rationale": "A table makes the provider, observed basis, roster capacity, dates, status, and lineage comparable without implying a financial adjustment."},
+      {"decision": "Derive only a display status relative to the run valuation date.", "rationale": "Active, departed-before-valuation, future-start, and unavailable statuses explain supplied roster dates without altering financial populations."},
+      {"decision": "Show the terminal source-row number rather than the opaque lineage identifier in the primary table.", "rationale": "The source file and row remain traceable while the table stays readable; the full hash remains preserved in the run artifact."}
+    ],
+    "observedBehaviour": [
+      "The browser-rendered G4 page presents valuation date, four high-signal financial metrics, an explicit interpretation boundary, provider sustainability evidence, and supporting concentration context in that order.",
+      "PRV-004 is visually highlighted as Departed before valuation, with $17,331.26 observed billed, FTE 1, start date 2025-01-01, and end date 2026-04-14.",
+      "The browser-observed run 573bc172-0c62-41a7-af87-84171b94280e has valuation date 2026-06-30, one open finding, a 453931-cent A/R difference, G3 blocked, and G7 blocked.",
+      "The served asset was rebuilt after simplifying the roster trace to source file plus terminal row number."
+    ],
+    "evidence": [
+      {"kind": "test", "reference": "pnpm --filter @redwood/workbench typecheck && pnpm --filter @redwood/workbench build", "result": "Passed after the Analyze redesign and trace readability refinement."},
+      {"kind": "review", "reference": "Browser screenshots supplied in the session for G4 Analyze", "result": "At 1920px, the hierarchy and provider table are readable; PRV-004 departure status is visible above supporting concentration views."},
+      {"kind": "trace", "reference": "http://127.0.0.1:4173/app.js; http://127.0.0.1:4173/api/runs/573bc172-0c62-41a7-af87-84171b94280e", "result": "Live server serves the redesigned G4 asset and confirms the displayed PRV-004 values, retained open finding, and G3/G7 blocks."}
+    ]
+  },
+  "conformance": {"status": "conforms", "divergences": []},
+  "learning": {"durableKnowledge": ["Provider concentration alone is insufficient to communicate a provider-departure sustainability scenario.", "G4 must distinguish source evidence, derived calculation, and professional judgment in both content and hierarchy.", "Trace displays should preserve a human-readable source file and row while leaving full hashes in the persisted run artifact."]},
+  "completion": {"capabilitySatisfied": true, "invariantsPreserved": true, "evidenceSufficient": true, "reviewRequired": true}
+}

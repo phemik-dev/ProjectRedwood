@@ -1,0 +1,3 @@
+claim_id,service_date,billed,allowed,patient_responsibility,payer,provider,location,service_line
+PR1,2025-06-15,1000.00,800.00,100.00,Atlas Commercial,PRV-PR,LOC-PR,Primary Care
+PR2,2026-06-15,1000.00,800.00,200.00,Atlas Commercial,PRV-PR,LOC-PR,Primary Care

@@ -1,0 +1,10 @@
+Metric,Expected_Value,Tolerance,Use
+Provider_ID,PRV-PROF-001,N/A,Subject identity
+Provider_FTE,1.0,0,Roster evidence
+Departure_Date,2026-04-15,N/A,Departure evidence
+Pre_Departure_Billed,1000.00,0.01,Observed evidence
+Post_Departure_Billed,2000.00,0.01,Observed evidence
+Post_Departure_Claim_Count,1,0,Observed evidence
+Deterministic_Truth_State,review_required,N/A,State boundary
+Automatic_Normalization_Amount,0.00,0.01,Authority boundary
+Professional_Approval_Record_Count,0,0,Negative assertion

@@ -1,0 +1,48 @@
+{
+  "policyVersion": "hiveforge.intent-reality.v1",
+  "work": {
+    "id": "challenge-f-pm-rcm-migration",
+    "title": "Challenge F PM/RCM native migration adapter and source routing repair",
+    "scope": "substantial",
+    "authority": ["Direct user request: complete Challenge F PM/RCM migration adapter"]
+  },
+  "intent": {
+    "productGoal": "Transform unseen native physician-group source files into an inspectable canonical QoR model without manual rebuilding.",
+    "capability": "Route browser-classified native legacy PM and new RCM charge/cash sources through explicit provider-crosswalk adapters into canonical claims/cash, preserve source and crosswalk lineage, reject missing mappings, supersede only duplicate root claims/payments, retain independent root A/R, GL, and bank-deposit controls, and expose run-bound G4 evidence.",
+    "architecturalIntent": ["Native source schemas remain distinct until deterministic source-system adapters create canonical records.", "Provider identity is authoritative only through a system-qualified explicit crosswalk.", "The G4 migration view is derived from the persisted analysis run rather than a global aggregate."],
+    "invariants": ["Unmapped native providers are quarantined and never silently joined by display name or stripped identifier.", "Canonical financial populations retain native source file hash, row identity, raw strings, and applicable crosswalk reference.", "Unreconciled differences and rejected rows remain visible rather than being forced to balance."],
+    "acceptanceEvidence": ["Core migration adapter test coverage added for legacy/new schemas, TSV cash, lineage, missing crosswalk rejection, and G4 gate behavior.", "Built-runtime observations for complete and incomplete crosswalk coverage.", "Core/workbench builds and typechecks plus the run-bound G4 workbench view."]
+  },
+  "execution": {
+    "decisions": [
+      {"decision": "Use exact LEGACY_PM and NEW_RCM provider keys in the crosswalk.", "rationale": "The supplied crosswalk identifies NEW_RCM keys with their N- prefix; stripping or renaming them would silently weaken identity authority."},
+      {"decision": "Represent migration contributions and coverage in CanonicalDeal.", "rationale": "This keeps the G4 view bound to each persisted run's canonical inputs and outputs."},
+      {"decision": "When direct browser input or a ZIP contains native migration sources, supersede only root claims and payments; retain root A/R, GL, bank-deposit, and reference/control populations.", "rationale": "Native charge and cash files are authoritative only for their duplicate claims/payment populations. Filtering all root sources incorrectly discarded independent reconciliation controls; the shared router now applies population-specific supersession."}
+    ],
+    "observedBehaviour": [
+      "The built core adapter accepted one LEGACY_PM charge, one NEW_RCM charge, and one TSV cash record; it mapped N-P-NEW to P100 and retained a crosswalk reference with source row 3.",
+      "A LEGACY_PM source provider absent from the crosswalk produced no canonical claim, a quarantine reason naming the system-qualified missing key, and a blocked G4 gate.",
+      "A native PM source without any migration crosswalk produced no canonical claim, a Missing migration crosswalk file quarantine, and a blocked G4 gate.",
+      "Core and workbench typechecks completed; core and workbench builds completed; the conformance schema validator accepted this record.",
+      "The core test runner could not execute in this sandbox because its child-process spawn returned EPERM; this is an environment divergence, not a passing test result.",
+      "A direct native-F routing proof admitted the migration crosswalk, native charge/cash populations, and root A/R, GL, and bank-deposit controls; it excluded only root claims and payments, produced two canonical claims and two cash events with crosswalk lineage, retained no quarantined rows, and passed G1/G4."
+    ],
+    "evidence": [
+      {"kind": "trace", "reference": "node --input-type=module built-core adapter exercise", "result": "2 canonical claims, 1 cash event, P100 canonical provider, complete G4 migration evidence, and G4 passed."},
+      {"kind": "trace", "reference": "node --input-type=module built-core missing-crosswalk exercise", "result": "0 canonical claims, explicit LEGACY_PM:P-NOT-MAPPED quarantine, coverage gap, and G4 blocked."},
+      {"kind": "test", "reference": "packages/core/src/core.test.ts", "result": "Migration coverage test added; runner blocked by sandbox child-process EPERM before executing test cases."},
+      {"kind": "test", "reference": "apps/workbench/source-routing.test.mjs", "result": "Passed: mixed native/root cohort excludes only root claims/payments while retaining A/R, GL, bank-deposit, and reference controls."},
+      {"kind": "trace", "reference": "node .tmp/challenge-f-native-exercise.mjs", "result": "Selected native sources plus root A/R, GL, and bank controls; excluded root claims/payments; ingested two claims and two cash events with complete crosswalk coverage and no quarantines; G1/G4 passed."},
+      {"kind": "artifact", "reference": "apps/workbench/public/app.js", "result": "Migration evidence phase renders persisted run contributions, crosswalk file/hash, coverage, rejected rows, and G4 rationale."},
+      {"kind": "artifact", "reference": "pnpm --filter @redwood/core build; pnpm --filter @redwood/workbench build; typechecks", "result": "Completed successfully."}
+    ]
+  },
+  "conformance": {
+    "status": "conforms-with-understood-divergence",
+    "divergences": [
+      {"expected": "Core automated tests execute in the workspace.", "observed": "tsx --test failed before test execution because the sandbox denied child-process spawn with EPERM.", "classification": "environment", "status": "understood"}
+    ]
+  },
+  "learning": {"recurringPattern": "Migration adapters must retain source-system qualified identifiers rather than normalizing IDs before crosswalk lookup.", "improvementProposal": null, "durableKnowledge": ["Challenge F New_Cash is TSV and must not be parsed with the CSV path.", "Challenge F NEW_RCM provider keys include the N- prefix and are crosswalk authority, not display-name candidates.", "ZIP intake must avoid combining native migration and derived duplicate populations without an explicit cohort decision."]},
+  "completion": {"capabilitySatisfied": true, "invariantsPreserved": true, "evidenceSufficient": true, "reviewRequired": false}
+}

@@ -1,0 +1,56 @@
+policyVersion: hiveforge.intent-reality.v1
+work:
+  id: redwood-professional-model-001
+  title: Run-bound professional review model core contracts
+  scope: substantial
+  authority:
+    - Direct user request: implement core professional model without UI changes
+intent:
+  productGoal: Preserve inspectable QoR review authority without silently changing source-derived financial facts.
+  capability: Provide reusable run-bound finding, professional review, adjustment-treatment, materiality, dependency-invalidation, and release-record core contracts and helpers.
+  architecturalIntent:
+    - Deterministic findings remain compatible with existing reconciliation APIs and become run-bound through an explicit binding helper.
+    - Professional actions are append-only artifacts tied to exact run, method, and dependency state.
+    - Release authorization remains distinct from draft workbook availability.
+  invariants:
+    - Unreconciled differences remain visible and are never balanced by review artifacts.
+    - Canonical AdjustmentEvent source facts are not mutated by proposed or approved treatment records.
+    - An artifact with an unmatched run, method, or dependency fingerprint is inactive.
+  acceptanceEvidence:
+    - pnpm --filter @redwood/core typecheck
+    - pnpm --filter @redwood/core test
+execution:
+  decisions:
+    - decision: Add optional run binding to Finding and preserve existing Finding, ReviewDecision, and fingerprint APIs.
+      rationale: Existing reconciliation callers continue to return deterministic findings while workbench/server integration can bind them explicitly.
+    - decision: Model candidate, approved treatment, materiality assessment, and release record as separate immutable artifacts.
+      rationale: Professional treatment cannot overwrite source evidence or imply a reconciliation pass.
+    - decision: Require named authority, rationale, and evidence for new professional artifacts.
+      rationale: A checkbox-only action is insufficient evidence for a professional review conclusion.
+  observedBehaviour:
+    - Core typecheck completed without errors.
+    - Thirty core tests passed, including five focused professional-model lifecycle tests.
+  evidence:
+    - kind: test
+      reference: pnpm --filter @redwood/core typecheck
+      result: Passed.
+    - kind: test
+      reference: pnpm --filter @redwood/core test
+      result: Passed 30 tests.
+conformance:
+  status: conforms
+  divergences:
+    - expected: Professional artifacts are persisted and exposed through minimal server endpoints.
+      observed: Server endpoints and persistence are integrated; gate, workbook, and UI wiring remain unchanged.
+      classification: other
+      status: understood
+learning:
+  recurringPattern: Existing run-bound decisions needed a reusable lifecycle primitive to avoid differing invalidation behavior across future review artifacts.
+  improvementProposal: Wire the new artifacts through strict gate context, persisted server review ledgers, and release records in a separately reviewed change.
+  durableKnowledge:
+    - packages/core/src/review.ts is the compatibility-preserving core lifecycle boundary for professional review artifacts.
+completion:
+  capabilitySatisfied: true
+  invariantsPreserved: true
+  evidenceSufficient: true
+  reviewRequired: true

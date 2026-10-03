@@ -1,0 +1,2 @@
+provider_id,effective_date,event,source_treatment,notes
+PRV-PROF-001,2026-04-16,PROVIDER_DEPARTURE,EVIDENCE_ONLY_REVIEW_REQUIRED,Observed post-departure revenue requires professional review and is not an automatic QoR normalization.

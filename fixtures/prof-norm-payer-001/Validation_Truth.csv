@@ -1,0 +1,10 @@
+Metric,Expected_Value,Tolerance,Use
+Prior_Allowed,1450.00,0.01,Comparison evidence
+Current_Allowed,1150.00,0.01,Comparison evidence
+Atlas_Current_Allowed,400.00,0.01,Payer evidence
+State_Current_Allowed,750.00,0.01,Payer evidence
+Current_Open_AR,0.00,0.01,Control
+Deterministic_Truth_State,evidence_only,N/A,Authority boundary
+Payer_Canonicalization_Authority,absent,N/A,Approval precondition
+Automatic_Normalization_Amount,0.00,0.01,Authority boundary
+Professional_Approval_Record_Count,0,0,Negative assertion

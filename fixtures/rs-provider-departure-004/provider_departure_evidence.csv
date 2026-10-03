@@ -1,0 +1,2 @@
+provider_id,effective_date,event,source_treatment,notes
+PRV-DEP,2026-04-16,PROVIDER_DEPARTURE,EVIDENCE_ONLY_REVIEW_REQUIRED,Observed post-departure revenue is evidence only; no automatic QoR normalization.

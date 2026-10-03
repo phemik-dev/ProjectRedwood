@@ -1,0 +1,16 @@
+Metric,Expected_Value,Tolerance,Use
+InScope_Claim_Count,4,0,Source completeness
+InScope_Billed,5400.00,0.01,Calculation check
+InScope_Allowed,4320.00,0.01,Calculation check
+InScope_Cash,4320.00,0.01,Cash population
+Subsequent_Cash_Through_Window,2400.00,0.01,Windowed cash
+Open_AR,0.00,0.01,A/R control
+Bank_Total_Through_Valuation,4320.00,0.01,Bank control
+ERA_to_Bank_Difference,0.00,0.01,Reconciliation
+Departed_Provider_ID,PRV-DEP,N/A,Departure evidence
+Departed_Provider_FTE,1.0,0,Departure evidence
+Departure_Date,2026-04-15,N/A,Departure evidence
+Pre_Departure_Billed,1000.00,0.01,Departure evidence
+Post_Departure_Billed,3500.00,0.01,Departure evidence
+Post_Departure_Claim_Count,2,0,Departure evidence
+Automatic_Normalization_Amount,0.00,0.01,Authority boundary

@@ -1,0 +1,5 @@
+claim_id,service_date,billed,allowed,payer,provider,location,service_line
+PS1,2025-06-15,1500.00,1200.00,Atlas Commercial,PRV-PS,LOC-PS,Primary Care
+PS2,2025-06-16,500.00,250.00,State Medicaid,PRV-PS,LOC-PS,Primary Care
+PS3,2026-06-15,500.00,400.00,Atlas Commercial,PRV-PS,LOC-PS,Primary Care
+PS4,2026-06-16,1500.00,750.00,State Medicaid,PRV-PS,LOC-PS,Primary Care

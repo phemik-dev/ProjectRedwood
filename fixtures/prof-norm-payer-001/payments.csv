@@ -1,0 +1,5 @@
+payment_id,claim_id,payment_date,amount,payer,event_type
+PNY-P001,PNY-001,2025-06-20,1200.00,Atlas Commercial,PAYER_PAYMENT
+PNY-P002,PNY-002,2025-06-20,250.00,State Medicaid,PAYER_PAYMENT
+PNY-P003,PNY-003,2026-06-20,400.00,Atlas Commercial,PAYER_PAYMENT
+PNY-P004,PNY-004,2026-06-20,750.00,State Medicaid,PAYER_PAYMENT

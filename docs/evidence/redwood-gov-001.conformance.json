@@ -1,0 +1,100 @@
+{
+  "policyVersion": "hiveforge.intent-reality.v1",
+  "work": {
+    "id": "redwood-gov-001",
+    "title": "Unresolved Evidence to Draft Work Product to Release Block",
+    "scope": "critical",
+    "authority": [
+      "Direct user instruction: freeze REDWOOD-GOV-001 as a distinct governance proof",
+      "Project Redwood non-negotiable invariant: unreconciled differences must be surfaced and never silently forced to balance"
+    ]
+  },
+  "intent": {
+    "productGoal": "Produce a traceable Quality of Revenue draft work product from source evidence without converting unresolved differences into a clean client-release result.",
+    "capability": "Carry an unresolved reconciliation finding through deterministic calculation, professional review, and draft workbook availability while release remains blocked.",
+    "architecturalIntent": [
+      "Calculation completeness at G4 is distinct from reconciliation, professional review, and client-release authority.",
+      "G1 source sufficiency/quarantine and G2 mapping review are distinct gate responsibilities.",
+      "A run and its source-artifact hashes bind evidence claims; corpus letters are not durable semantic identities."
+    ],
+    "invariants": [
+      "The A/R difference remains visible and is not force-balanced or suppressed.",
+      "No client-release status is implied while prerequisite gates are not passed.",
+      "Provider-departure source evidence is not misrepresented as a completed sustainability-analysis proof."
+    ],
+    "acceptanceEvidence": [
+      "Persisted Challenge D browser run c8f21c7f-82a5-47a1-9d21-ab78af14660a.",
+      "Challenge D archive .tmp/Redwood_Challenge_D_provider_departure_fte_v0.1.zip with SHA-256 6d358a0ab03b5919305f65a159dae0a4c158eb68bfb5f9cccd2b3113454c9604.",
+      "Source artifact inventory and hashes recorded in docs/SCENARIO_IDENTITY_REGISTRY.md.",
+      "Captured browser screenshots show Map, Reconcile, Review, and Export states."
+    ]
+  },
+  "execution": {
+    "decisions": [
+      {
+        "decision": "Register REDWOOD-GOV-001 separately from provider-departure sustainability work.",
+        "rationale": "The observed run proves governance and release behavior; source semantics alone do not prove a visible end-to-end sustainability result."
+      },
+      {
+        "decision": "Record the exact G1 quarantine reason separately from G2 mapping status.",
+        "rationale": "This preserves the intended gate boundary and prevents unreviewed mappings from being misreported as a source-sufficiency failure."
+      }
+    ],
+    "observedBehaviour": [
+      "The run retained a $4,539.31 A/R snapshot-to-GL A/R difference as one open reconciliation finding with professional materiality unset.",
+      "G4 passed while G0, G1, G2, G3, G5, G6, and G7 were not passed; G7 cited those prerequisite gates and denied client release.",
+      "A draft workbook download was available and the Export view explicitly stated that client release was blocked.",
+      "G1 was blocked by one quarantined adjustment row with reason Missing adjustment amount; G2 was independently blocked by mapping state.",
+      "The source package contains a provider departure for PRV-004, but the captured Analyze UI did not display provider sustainability output."
+    ],
+    "evidence": [
+      {
+        "kind": "trace",
+        "reference": "apps/workbench/data/runs/c8f21c7f-82a5-47a1-9d21-ab78af14660a.bin; .tmp/Redwood_Challenge_D_provider_departure_fte_v0.1.zip",
+        "result": "Persisted run records the gate states, quarantine record, finding, source inventory, mappings, and source content; all seven archive-entry hashes exactly match the complete run inventory and no archive-only entry exists."
+      },
+      {
+        "kind": "review",
+        "reference": "docs/SCENARIO_IDENTITY_REGISTRY.md",
+        "result": "Semantic identity binding, exact source hashes, G1 cause, and provider-departure evidence are recorded."
+      },
+      {
+        "kind": "review",
+        "reference": "Challenge D browser screenshots supplied in the session",
+        "result": "Map, Reconcile, Review, and Export views show the unresolved finding, draft download affordance, and explicit client-release block."
+      }
+    ]
+  },
+  "conformance": {
+    "status": "conforms-with-understood-divergence",
+    "divergences": [
+      {
+        "expected": "The G1 presentation should communicate the same gate semantics from intake through the persisted run.",
+        "observed": "The Map page showed an intake-stage G1 pass_with_warnings based on required-source presence, while the persisted run's G1 was blocked because one adjustment row was quarantined.",
+        "classification": "architectural-weakness",
+        "status": "understood"
+      },
+      {
+        "expected": "A provider-departure sustainability proof visibly demonstrates the run-bound sustainability output.",
+        "observed": "Challenge D contains provider departure source evidence, but the captured Analyze UI exposes provider concentration rather than providerSustainability output.",
+        "classification": "missing-test",
+        "status": "open"
+      }
+    ]
+  },
+  "learning": {
+    "recurringPattern": "Lettered corpus labels can be mistaken for semantic test identities, causing governance proofs and business-capability proofs to be conflated.",
+    "improvementProposal": "Require semantic scenario IDs, exact run bindings, and source hashes in scenario evidence before a proof claim can be marked proven.",
+    "durableKnowledge": [
+      "Challenge D proves REDWOOD-GOV-001.",
+      "Challenge D is an eligible source corpus for RS-PROVIDER-DEPARTURE-001 because it contains PRV-004 departure evidence.",
+      "Eligibility of source semantics is not proof of an end-to-end user-visible analysis capability."
+    ]
+  },
+  "completion": {
+    "capabilitySatisfied": true,
+    "invariantsPreserved": true,
+    "evidenceSufficient": true,
+    "reviewRequired": true
+  }
+}

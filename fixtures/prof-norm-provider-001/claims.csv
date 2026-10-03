@@ -1,0 +1,4 @@
+claim_id,service_date,billed,allowed,provider,location,service_line
+PNP-001,2026-04-15,1000.00,800.00,PRV-PROF-001,LOC-PROF,Cardiology
+PNP-002,2026-05-01,2000.00,1600.00,PRV-PROF-001,LOC-PROF,Cardiology
+PNP-003,2026-05-10,900.00,720.00,PRV-ACTIVE-001,LOC-PROF,Primary Care

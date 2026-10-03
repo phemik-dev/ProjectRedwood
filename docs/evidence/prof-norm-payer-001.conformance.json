@@ -1,0 +1,24 @@
+{
+  "policyVersion": "hiveforge.intent-reality.v1",
+  "work": {
+    "id": "prof-norm-payer-001",
+    "title": "Authored payer professional-normalization precondition fixture",
+    "scope": "substantial",
+    "authority": ["Direct user request to implement authored professional normalization proof fixtures, documentation, and feasible tests without creating professional approvals."]
+  },
+  "intent": {
+    "productGoal": "Make payer comparative evidence and its missing canonicalization/causation authority explicit without inferring a contract-rate normalization.",
+    "capability": "Provide a deterministic authored payer fixture with post-run truth assertions and testable ineligibility for professional approval.",
+    "architecturalIntent": ["Observed payer movement, payer identity authority, causal interpretation, and professional normalization remain separate objects.", "Truth artifacts are excluded from intake.", "Residuals remain explicit and are never silently allocated."],
+    "invariants": ["Automatic normalization remains zero.", "No professional approval record is authored.", "No payer canonical identity or contract causation is inferred from raw labels or reference rates."],
+    "acceptanceEvidence": ["Fixture-contract regression test.", "Post-run truth contract and proof semantics manifest.", "Future canonicalization, decision API, and invalidation integration tests before any approval claim."]
+  },
+  "execution": {
+    "decisions": [{"decision": "Keep the payer fixture approval-ineligible.", "rationale": "The repository has no payer canonicalization/crosswalk authority model or contract-causation decision contract."}],
+    "observedBehaviour": ["Not yet executed as a browser/API proof; fixture-level assertions establish evidence-only payer movement and explicit authority blockers."],
+    "evidence": [{"kind": "test", "reference": "pnpm --filter @redwood/core test", "result": "30/30 tests passed, including PROF-NORM-PAYER-001 evidence-only raw-payer, zero-approval, and canonicalization-blocker assertions."}, {"kind": "artifact", "reference": "fixtures/prof-norm-payer-001", "result": "Authored fixture declares evidence-only payer movement, absent canonicalization authority, zero automatic normalization, and zero approval records."}]
+  },
+  "conformance": {"status": "incomplete", "divergences": [{"expected": "A future payer normalization decision is bound to a canonical payer and causal contract evidence.", "observed": "Payer labels remain raw/alias-mapped and a dedicated payer authority plus normalization API does not exist.", "classification": "architectural-weakness", "status": "open"}]},
+  "learning": {"recurringPattern": "Comparative payer movement is not contract causation and cannot establish a normalization without identity and evidence authority.", "improvementProposal": "Authorize and implement payer canonicalization/crosswalk semantics before enabling payer normalization decisions.", "durableKnowledge": ["Raw payer labels cannot be silently normalized into canonical identities.", "Reference rates remain context unless direct causal evidence and professional authority are recorded."]},
+  "completion": {"capabilitySatisfied": true, "invariantsPreserved": true, "evidenceSufficient": false, "reviewRequired": true}
+}

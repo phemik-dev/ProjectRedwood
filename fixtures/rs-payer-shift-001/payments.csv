@@ -1,0 +1,5 @@
+payment_id,claim_id,payment_date,amount,payer,event_type
+P1,PS1,2025-06-20,1200.00,Atlas Commercial,PAYER_PAYMENT
+P2,PS2,2025-06-20,250.00,State Medicaid,PAYER_PAYMENT
+P3,PS3,2026-06-20,400.00,Atlas Commercial,PAYER_PAYMENT
+P4,PS4,2026-06-20,750.00,State Medicaid,PAYER_PAYMENT

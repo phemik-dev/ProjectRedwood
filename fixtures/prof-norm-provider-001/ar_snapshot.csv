@@ -1,0 +1,2 @@
+receivable_id,claim_id,snapshot_date,balance,age_basis,age_days,age_bucket,provider,location,service_line
+PNP-AR001,PNP-002,2026-06-30,0.00,service_date,60,31-60,PRV-PROF-001,LOC-PROF,Cardiology

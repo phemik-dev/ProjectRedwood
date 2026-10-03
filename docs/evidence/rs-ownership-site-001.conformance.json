@@ -1,0 +1,89 @@
+{
+  "policyVersion": "hiveforge.intent-reality.v1",
+  "work": {
+    "id": "rs-ownership-site-001",
+    "title": "Ownership-site context with independent control retention",
+    "scope": "substantial",
+    "authority": [
+      "Direct user instruction: proceed to the next authorized capability proof.",
+      "Direct user decision: use 2026-08-31 as Challenge E subsequentCashEnd."
+    ]
+  },
+  "intent": {
+    "productGoal": "Preserve transaction-context evidence for Revenue Sustainability analysis without manufacturing same-store conclusions or weakening financial control evidence.",
+    "capability": "Ingest lineaged ownership-site history, expose the acquired location separately in run-bound analysis, retain independent financial controls, and compare the resulting run with the post-run Challenge E truth contract.",
+    "architecturalIntent": [
+      "Ownership-site history is a separate lineaged source population, not a transaction rewrite or a professional adjustment.",
+      "Same-store context, deterministic observation, and professional interpretation remain distinct objects.",
+      "Excluded truth-oracle material is compared only after immutable run execution."
+    ],
+    "invariants": [
+      "No acquired-site or same-store value is invented when the source population is zero.",
+      "Independent cash, bank, GL, and A/R controls remain observable and unreconciled differences would remain visible.",
+      "G3/G4 success does not grant G7 release authority."
+    ],
+    "acceptanceEvidence": [
+      "Run ad47195e-f0d3-4e84-b886-0f8ecbbfcd4a from the unchanged staged Challenge E corpus.",
+      "Lineaged LOC04 ownership-site history and run-bound ownership analysis.",
+      "Post-run comparison against Validation_Truth.csv and HTTP 200 workbook export."
+    ]
+  },
+  "execution": {
+    "decisions": [
+      {
+        "decision": "Use the existing staged Challenge E corpus as the next Revenue Sustainability capability proof.",
+        "rationale": "Its ownership-site history permits evidence-retention and control verification without reopening already frozen migration or provider-departure scenarios."
+      },
+      {
+        "decision": "State the zero acquired-site population as a coverage limitation rather than extrapolate a nonzero same-store conclusion.",
+        "rationale": "The corpus proves that LOC04 is preserved and separately reported, but cannot demonstrate treatment of a nonzero post-close population."
+      }
+    ],
+    "observedBehaviour": [
+      "LOC04 acquired_site context with effective date 2026-01-01 was retained with source row and hash lineage; its analysis values were zero without an adjustment.",
+      "All four financial controls matched and the run had no findings; G1, G3, and G4 passed while G7 remained blocked by governance prerequisites.",
+      "All ten published Challenge E truth assertions matched when inspected after the run."
+    ],
+    "evidence": [
+      {
+        "kind": "trace",
+        "reference": "Run ad47195e-f0d3-4e84-b886-0f8ecbbfcd4a",
+        "result": "Lineaged ownership context, zero acquired-site population, matched controls, no findings, and blocked G7 are all run-bound."
+      },
+      {
+        "kind": "artifact",
+        "reference": ".tmp/Redwood_Challenge_E_ownership_chow_same_store_v0.1.zip",
+        "result": "Unchanged staged archive SHA-256 8ec4442d3fa5d846d357609b99805bcd5e731b7e666afb27ab041ff1ec3e4907."
+      },
+      {
+        "kind": "trace",
+        "reference": ".tmp/challenge-e-inspection/E_ownership_chow_same_store/Validation_Truth.csv",
+        "result": "All ten published assertions matched after run completion."
+      },
+      {
+        "kind": "artifact",
+        "reference": "docs/RS_OWNERSHIP_SITE_001_REPORT.md",
+        "result": "Records ownership lineage, control results, truth comparison, output evidence, and claim boundary."
+      }
+    ]
+  },
+  "conformance": {
+    "status": "conforms",
+    "divergences": []
+  },
+  "learning": {
+    "recurringPattern": "Ownership context can be present even when the associated post-close financial population is zero.",
+    "improvementProposal": "Use a separately authored corpus with nonzero acquired-site post-close revenue before claiming nonzero same-store exclusion coverage.",
+    "durableKnowledge": [
+      "Ownership-site history is retained with run-bound lineage and does not rewrite transaction populations.",
+      "A zero acquired-site population is a valid observed outcome, not evidence for a hypothetical adjustment.",
+      "Challenge E verifies contextual evidence and independent control retention, not a professional CHOW conclusion."
+    ]
+  },
+  "completion": {
+    "capabilitySatisfied": true,
+    "invariantsPreserved": true,
+    "evidenceSufficient": true,
+    "reviewRequired": true
+  }
+}

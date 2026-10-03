@@ -1,0 +1,40 @@
+{
+  "policyVersion": "hiveforge.intent-reality.v1",
+  "work": {"id": "redwood-cash-event-001", "title": "Challenge B typed cash-event and malformed-adjustment evidence", "scope": "substantial", "authority": ["Direct user instruction to continue Project Redwood challenges and build work"]},
+  "intent": {
+    "productGoal": "Preserve the source semantics of healthcare cash events and surface malformed financial evidence without silent normalization.",
+    "capability": "Recognize Challenge B event_type as a canonical payment type, preserve source event labels in G4 cash-event evidence, retain patient-payment and recoupment behavior, and quarantine unsupported adjustment rows.",
+    "architecturalIntent": ["Challenge letters are aliases; proof identity follows verified source semantics.", "Schema gaps and invalid rows remain visible in quarantine rather than being inferred into valid adjustments."],
+    "invariants": ["No adjustment ID or posting date is invented for malformed source rows.", "Cash-event type classification is derived from the source event_type field.", "Unreconciled A/R and blocked release gates remain visible."],
+    "acceptanceEvidence": ["Exact Challenge B archive preflight.", "Core mapping build/typecheck and focused semantic preflight.", "Browser-created Challenge B run through the standard ZIP intake path."]
+  },
+  "execution": {
+    "decisions": [
+      {"decision": "Add event_type as a payment_type alias and preserve its source value.", "rationale": "Challenge B supplies event semantics in event_type; recognizing that documented header preserves patient-payment and recoupment classifications without inventing data."},
+      {"decision": "Expose run-bound source labels and canonical treatment in G4.", "rationale": "The reviewer can verify partial-payment, patient-payment, and recoupment semantics without interpreting an aggregate cash total as a substitute for evidence."},
+      {"decision": "Do not normalize the adjustment rows.", "rationale": "They omit required adjustment IDs and posting dates, so accepting or synthesizing them would conceal a source-quality difference."}
+    ],
+    "observedBehaviour": [
+      "Browser-created run 51f02c71-1f02-41b6-a60f-a3137d3c8e55 was produced through the standard Challenge B ZIP intake path after the rebuilt server was restarted.",
+      "The persisted mapping for payments.event_type targets payment_type with confidence 1 under the authoritative configured alias rule.",
+      "G4 visibly presents the Cash-event evidence table. Its persisted in-scope rows are PAYER_PAYMENT / payer_payment: 287 events and $28,307.84; PATIENT_PAYMENT / patient_payment: 274 events and $5,759.30; PARTIAL_PAYMENT / payer_payment: 6 events and $490.07; RECOUPMENT / recoupment: 3 events and negative $94.74.",
+      "All-cash, ERA-to-bank, and matched-cash controls match at $34,462.47. The A/R-to-GL A/R difference remains $5,965.03 as one open finding with professional materiality unset.",
+      "All seven malformed adjustment rows remain quarantined for Missing adjustment ID. G1, G2, G3, G6, and G7 remain blocked; G4 passes, and Export visibly permits only a draft workbook."
+    ],
+    "evidence": [
+      {"kind": "artifact", "reference": ".tmp/Redwood_Challenge_B_provider_departure_v0.1.zip", "result": "SHA-256 debc8ab87800f8ca4d440f8f073c20c5df7df4afdd31a68d6704a2e9121b066d; complete source inventory matches persisted run 51f02c71-1f02-41b6-a60f-a3137d3c8e55."},
+      {"kind": "test", "reference": "pnpm --filter @redwood/core build && pnpm --filter @redwood/core typecheck && pnpm --filter @redwood/workbench typecheck && pnpm --filter @redwood/workbench build", "result": "Passed after the event_type, source-event preservation, G4 cash-event evidence, and readability changes."},
+      {"kind": "trace", "reference": "apps/workbench/data/runs/51f02c71-1f02-41b6-a60f-a3137d3c8e55.bin", "result": "Run records the source inventory, event-type mapping, canonical cash mix, quarantines, reconciliations, findings, and gate states."},
+      {"kind": "review", "reference": "Browser screenshots supplied in the session for Reconcile, Analyze, and Export", "result": "Screenshots show matched cash controls, visible $5,965.03 A/R difference, populated cash-event evidence table, and draft-only release block."}
+    ]
+  },
+  "conformance": {
+    "status": "conforms-with-understood-divergence",
+    "divergences": [
+      {"expected": "Challenge B denial/partial-allowance records enter the canonical adjustment population.", "observed": "All seven adjustment rows are quarantined because they omit required adjustment_id before a posting-date check can occur.", "classification": "missing-test", "status": "understood"},
+      {"expected": "Challenge B proves reversal behavior.", "observed": "No verified payment event in the package is labeled as a reversal; three events classify as recoupment.", "classification": "stale-intent", "status": "understood"}
+    ]
+  },
+  "learning": {"durableKnowledge": ["Challenge B is a cash-event source-semantic scenario, not a provider-departure scenario.", "event_type is a documented external header spelling for payment_type.", "Malformed adjustments must remain quarantined until a source-backed mapping contract exists.", "G4 must display source event labels and canonical treatment together when source event semantics materially affect cash review."]},
+  "completion": {"capabilitySatisfied": true, "invariantsPreserved": true, "evidenceSufficient": true, "reviewRequired": true}
+}
