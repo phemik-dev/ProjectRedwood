@@ -15,8 +15,8 @@ Read this file, `docs/SCENARIO_IDENTITY_REGISTRY.md`, and the relevant ADR/confo
 
 ## Programme-state document version
 
-- **programme_state_document_version:** `077930497b057c34e3dfa4423156d45f6ba2f69b`
-- **interpretation:** this identifies the durable programme-state record read before this documentation-only comparison update. It is deliberately separate from the executable baseline concept; future documentation-only commits do not redefine the executable implementation examined.
+- **programme_state_document_version:** `1a3e9176c4a461b93f212d6db1d22be41567d84f`
+- **interpretation:** this identifies the most recent committed programme-state documentation version. It is deliberately separate from the executable baseline concept; future documentation-only commits do not redefine the executable implementation examined.
 
 ## Architecture
 
