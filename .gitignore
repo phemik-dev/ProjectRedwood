@@ -5,3 +5,16 @@ apps/workbench/data/
 *.tsbuildinfo
 .DS_Store
 .tmp/
+
+# Local HiveForge workroom state; durable project records live under docs/.
+.workroom/
+
+# Standalone design/demo outputs; canonical executable and evidence artifacts remain explicitly tracked.
+artifacts/DEMO_*.html
+artifacts/README_DEMO_*.md
+artifacts/REVIEW_DEMO_*.md
+artifacts/Redwood_Executive_*.md
+artifacts/Redwood_Exhibit_*.json
+artifacts/Redwood_Integrated_*.md
+artifacts/Redwood_Platform_Feature_Gap_Matrix_v0.1.md
+artifacts/Redwood_Visualization_Chamber_v0.1.md

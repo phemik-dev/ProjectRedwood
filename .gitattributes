@@ -1,0 +1,2 @@
+# Canonical repository text uses LF; do not mass-rewrite existing history.
+* text=auto eol=lf
