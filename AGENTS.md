@@ -25,6 +25,10 @@ Use `docs/constitution/conformance-record.template.yaml` for substantial changes
 - Google Drive is the research, methodology, evidence, source-register, and client-reference corpus.
 - The frozen Higgsfield prototype is reference material, not the governing implementation.
 
+## Programme-state operating rule
+
+Before performing a Redwood test, build, benchmark, workpaper comparison, or architecture change, read `docs/REDWOOD_CURRENT_PROGRAMME_STATE.md`, `docs/SCENARIO_IDENTITY_REGISTRY.md`, and the relevant conformance/ADR records. Do not infer programme state solely from repository age, filenames, challenge letters, or an individual historical report.
+
 ## Completion
 
 Tests are necessary but insufficient. Do not report substantial work complete without evidence for the intended capability, an invariant check, observed-result conformance, and an explicit explanation of every remaining divergence.
