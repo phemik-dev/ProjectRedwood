@@ -1,0 +1,11 @@
+{
+  "scenarioId": "RR-PERCENT-CHARGES-001",
+  "kind": "authored-evidence-only-percent-of-charges",
+  "intakeDisposition": "excluded_post_run_truth_contract",
+  "authorizedTruthState": "evidence_only",
+  "intakeSources": ["claims.csv", "payments.csv"],
+  "metrics": {"grossChargeCents": 100000, "allowedAmountCents": 70000, "observedCashCents": 60000},
+  "observedRatio": {"numerator": "observed_cash", "denominator": "gross_charge", "value": 0.6},
+  "prohibited": ["Treat the ratio as an automatic realization-rate assumption.", "Allocate an estimated amount or create a QoR adjustment from the ratio."],
+  "automaticNormalizationCents": 0
+}

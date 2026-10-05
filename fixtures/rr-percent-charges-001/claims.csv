@@ -1,0 +1,2 @@
+claim_id,service_date,billed,allowed,payer,provider,location,service_line
+RPC-001,2026-03-01,1000.00,700.00,Beacon,PRV-002,LOC-002,Primary Care

@@ -1,0 +1,24 @@
+{
+  "policyVersion": "hiveforge.intent-reality.v1",
+  "work": {
+    "id": "REVENUE-RECOGNITION-EVIDENCE-FIXTURES-001",
+    "title": "Authored revenue-recognition evidence-only fixture contracts",
+    "scope": "substantial",
+    "authority": ["Direct user request to create minimal authored fixtures, truth contracts, and tests for RR-COHORT-CURVE-001, RR-PERCENT-CHARGES-001, RR-COMPOSITE-001, and RR-SEGMENT-OVERRIDE-001 without external sources."]
+  },
+  "intent": {
+    "productGoal": "Make bounded revenue-recognition observations reproducible without converting fixture facts into selected methods, QoR adjustments, or professional conclusions.",
+    "capability": "Provide four minimal synthetic intake populations with explicit post-run truth contracts and regression assertions for the evidence-only boundary.",
+    "architecturalIntent": ["Intake facts, post-run truth contracts, method selection, adjustments, and professional conclusions remain separate objects.", "Truth contracts are excluded from intake and source evidence is never rewritten to force a result."],
+    "invariants": ["All four fixtures retain an evidence_only truth state.", "Automatic normalization is zero for every fixture.", "Composite signals are not blended or double counted and segments are not overridden automatically."],
+    "acceptanceEvidence": ["packages/core/src/revenue-recognition-evidence-fixtures.test.ts", "fixtures/rr-*/Truth_Contract.json", "JSON-schema validation of this conformance record."]
+  },
+  "execution": {
+    "decisions": [{"decision": "Represent each requested concept as a post-run truth contract rather than an analytical-method implementation.", "rationale": "The direct request is bounded to authored fixtures/contracts/tests, and this preserves the evidence-only authority boundary."}],
+    "observedBehaviour": ["The focused fixture regressions passed: each fixture's claims/payments population matched the post-run contract, truth contracts remained outside intake, and adjustmentTotal remained zero.", "Core typecheck passed and this record validated against the stable conformance schema."],
+    "evidence": [{"kind": "test", "reference": "pnpm --filter @redwood/core test", "result": "43/43 tests passed, including six RR fixture-contract assertions."}, {"kind": "test", "reference": "pnpm --filter @redwood/core typecheck", "result": "Passed."}, {"kind": "artifact", "reference": "fixtures/rr-*-001", "result": "Four synthetic fixtures provide only claims/payments intake populations; every truth contract is explicitly excluded from intake and specifies zero automatic normalization."}, {"kind": "test", "reference": "node scripts/validate-conformance.mjs docs/evidence/revenue-recognition-evidence-fixtures-001.conformance.json", "result": "Passed."}]
+  },
+  "conformance": {"status": "conforms-with-understood-divergence", "divergences": [{"expected": "An approved, run-bound method or professional decision may select a recovery approach or segment override in the future.", "observed": "No such selection or decision authority is created by these authored regression fixtures.", "classification": "architectural-weakness", "status": "understood"}]},
+  "learning": {"recurringPattern": "Observed rates and segment differences are evidence, not authority for an economic conclusion.", "improvementProposal": "Introduce method-selection and professional-decision contracts only under separately authorized work with explicit lineage, eligibility, and approval semantics.", "durableKnowledge": ["Post-run truth contracts must never be treated as intake sources.", "A composite of signals must not silently select, weight, or double count evidence."]},
+  "completion": {"capabilitySatisfied": true, "invariantsPreserved": true, "evidenceSufficient": true, "reviewRequired": true}
+}

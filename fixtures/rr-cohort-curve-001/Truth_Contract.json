@@ -1,0 +1,11 @@
+{
+  "scenarioId": "RR-COHORT-CURVE-001",
+  "kind": "authored-evidence-only-recovery-cohort",
+  "intakeDisposition": "excluded_post_run_truth_contract",
+  "authorizedTruthState": "evidence_only",
+  "intakeSources": ["claims.csv", "payments.csv"],
+  "metrics": {"grossChargeCents": 100000, "allowedAmountCents": 80000, "observedCashCents": 60000},
+  "observedCohort": {"eligibleClaims": 1, "recoveredCashCents": 60000, "observedRecoveryRate": 0.75},
+  "prohibited": ["Use the observed cohort rate as an automatic recovery assumption.", "Create a QoR adjustment or professional conclusion from this fixture."],
+  "automaticNormalizationCents": 0
+}

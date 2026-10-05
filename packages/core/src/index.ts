@@ -17,3 +17,4 @@ export * from "./gold-validation.js";
 export * from "./scope.js";
 export * from "./ageing.js";
 export * from "./method-profile.js";
+export * from "./recovery.js";

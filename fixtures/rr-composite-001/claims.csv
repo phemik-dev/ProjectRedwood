@@ -1,0 +1,2 @@
+claim_id,service_date,billed,allowed,payer,provider,location,service_line
+RRC-001,2026-04-01,1000.00,800.00,Cascade,PRV-003,LOC-003,Orthopedics

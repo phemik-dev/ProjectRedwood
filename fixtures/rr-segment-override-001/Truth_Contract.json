@@ -1,0 +1,11 @@
+{
+  "scenarioId": "RR-SEGMENT-OVERRIDE-001",
+  "kind": "authored-evidence-only-segment-override",
+  "intakeDisposition": "excluded_post_run_truth_contract",
+  "authorizedTruthState": "evidence_only",
+  "intakeSources": ["claims.csv", "payments.csv"],
+  "metrics": {"grossChargeCents": 100000, "allowedAmountCents": 80000, "observedCashCents": 80000},
+  "observedSegments": [{"id": "Imaging", "grossChargeCents": 60000, "observedCashCents": 50000}, {"id": "Laboratory", "grossChargeCents": 40000, "observedCashCents": 30000}],
+  "prohibited": ["Create or apply a segment-specific override automatically.", "Use a service-line difference as a QoR normalization or professional conclusion."],
+  "automaticNormalizationCents": 0
+}

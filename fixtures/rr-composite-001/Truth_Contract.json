@@ -1,0 +1,11 @@
+{
+  "scenarioId": "RR-COMPOSITE-001",
+  "kind": "authored-evidence-only-composite-signal",
+  "intakeDisposition": "excluded_post_run_truth_contract",
+  "authorizedTruthState": "evidence_only",
+  "intakeSources": ["claims.csv", "payments.csv"],
+  "metrics": {"grossChargeCents": 100000, "allowedAmountCents": 80000, "observedCashCents": 60000},
+  "componentSignals": [{"id": "observed_cash_to_charge", "value": 0.6}, {"id": "allowed_to_charge", "value": 0.8}],
+  "prohibited": ["Select, weight, blend, add, or double count the component signals automatically.", "Create a QoR adjustment or professional conclusion from the composite."],
+  "automaticNormalizationCents": 0
+}

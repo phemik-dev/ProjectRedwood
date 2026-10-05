@@ -1,0 +1,71 @@
+{
+  "policyVersion": "hiveforge.intent-reality.v1",
+  "work": {
+    "id": "RECOVERY-METHODS-001",
+    "title": "Reusable recovery-methods engine",
+    "scope": "substantial",
+    "authority": ["Direct user request: minimal reusable recovery methods engine"]
+  },
+  "intent": {
+    "productGoal": "Preserve a governed distinction between observed evidence and modeled remaining recovery without altering existing QoR analytics.",
+    "capability": "Provide an independently callable contract for collection-distribution, percent-of-charges, and composite recovery methods, including evidence state, an as-of/reconstruction boundary, and segment-level overrides.",
+    "architecturalIntent": [
+      "Keep the new recovery engine separate from the existing analytics path until an explicit integration decision is made.",
+      "Represent money as integer cents and preserve method/evidence provenance in results."
+    ],
+    "invariants": [
+      "The engine must not modify source evidence or manufacture observed collections.",
+      "Items outside the as-of boundary must not contribute to recovery output.",
+      "Each eligible item is assigned at most one composite segment."
+    ],
+    "acceptanceEvidence": [
+      "Focused node tests cover all three methods, evidence states, as-of exclusion, reconstruction boundaries, and segment override precedence.",
+      "Core typecheck and existing core tests demonstrate the analytics path remains unchanged."
+    ]
+  },
+  "execution": {
+    "decisions": [
+      {
+        "decision": "Expose a standalone recovery contract rather than changing analyze() or legacy MethodProfile behavior.",
+        "rationale": "The direct request forbids changing existing analytics behavior, while the standalone API is reusable and permits later governed integration."
+      }
+    ],
+    "observedBehaviour": [
+      "The standalone engine returns modeled recovery only, retains input evidence references, and emits exclusions for as-of mismatch, missing charge basis, and insufficient method evidence.",
+      "Focused tests demonstrated collection-distribution reconstruction filtering, exact percent-of-charges cent rounding, first-match composite overrides, and boundary enforcement.",
+      "Core typecheck passed without modifying packages/core/src/analytics.ts."
+    ],
+    "evidence": [
+      {
+        "kind": "test",
+        "reference": "pnpm exec tsx --test packages/core/src/recovery.test.ts",
+        "result": "5/5 focused recovery tests passed."
+      },
+      {
+        "kind": "test",
+        "reference": "pnpm --filter @redwood/core typecheck",
+        "result": "Passed."
+      },
+      {
+        "kind": "artifact",
+        "reference": "packages/core/src/recovery.ts",
+        "result": "Standalone reusable recovery engine; no analytics integration or legacy analytics edit."
+      }
+    ]
+  },
+  "conformance": {
+    "status": "conforms-with-understood-divergence",
+    "divergences": [
+      {
+        "expected": "The full core suite passes.",
+        "observed": "An unrelated concurrently untracked fixture test, RR-COHORT-CURVE-001, expected observed cash of 80000 cents but received 60000 cents.",
+        "classification": "other",
+        "status": "understood"
+      }
+    ]
+  },
+  "learning": {
+    "durableKnowledge": ["Recovery-method policy is a modeled, approval-bound concern and is intentionally not wired into legacy analytics by this work."]
+  },
+  "completion": { "capabilitySatisfied": true, "invariantsPreserved": true, "evidenceSufficient": true, "reviewRequired": true }
+}

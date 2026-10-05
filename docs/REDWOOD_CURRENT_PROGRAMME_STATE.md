@@ -37,6 +37,7 @@ Rules: AI proposes; evidence persists; code calculates; professionals decide. Ev
 | `RR-MIGRATION-001` | PROVEN | Population-specific supersession and explicit crosswalk. |
 | `REDWOOD-RS-ENGINE-001` | PROVEN system capability | Sustainability evidence is not professional methodology validation. |
 | `REDWOOD-PROFESSIONAL-WORKBENCH-001` | PROVEN system workflow | Approval/release workflow is not practitioner methodology validation. |
+| `REDWOOD-RECOVERY-METHODS-001` | PROVEN system capability | Recovery-method representation is not professionally validated methodology. |
 
 ## Professional and gate boundary
 

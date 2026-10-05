@@ -1,0 +1,3 @@
+payment_id,claim_id,payment_date,amount,payer,event_type
+RRS-P001,RRS-001,2026-05-15,500.00,Delta,PAYER_PAYMENT
+RRS-P002,RRS-002,2026-05-16,300.00,Delta,PAYER_PAYMENT

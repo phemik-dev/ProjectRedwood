@@ -1,0 +1,2 @@
+claim_id,service_date,billed,allowed,payer,provider,location,service_line
+RCC-001,2026-01-15,1000.00,800.00,Atlas,PRV-001,LOC-001,Cardiology

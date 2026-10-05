@@ -1,0 +1,2 @@
+payment_id,claim_id,payment_date,amount,payer,event_type
+RRC-P001,RRC-001,2026-04-20,600.00,Cascade,PAYER_PAYMENT

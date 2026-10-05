@@ -1,0 +1,2 @@
+payment_id,claim_id,payment_date,amount,payer,event_type
+RPC-P001,RPC-001,2026-03-15,600.00,Beacon,PAYER_PAYMENT

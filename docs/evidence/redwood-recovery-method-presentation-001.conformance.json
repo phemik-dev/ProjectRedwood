@@ -1,0 +1,65 @@
+{
+  "policyVersion": "hiveforge.intent-reality.v1",
+  "work": {
+    "id": "redwood-recovery-method-presentation-001",
+    "title": "Recovery method presentation across Analyze, Review, and workbook",
+    "scope": "substantial",
+    "authority": ["Direct user request to implement minimal Review/Analyze/workbook recovery method presentation without automatic weighting."]
+  },
+  "intent": {
+    "productGoal": "Make recovery-method evidence and governed professional judgment inspectable in the formula-driven QoR work product.",
+    "capability": "Present parallel recovery methods, evidence states, components, overrides, and the composite candidate/approval distinction in Analyze, Review, and the workbook.",
+    "architecturalIntent": [
+      "The existing Method Profile and the reusable recovery engine remain separate until an explicit integration decision is made.",
+      "Observed A/R, method inputs, composite candidate, and professional approval remain distinct layers.",
+      "The workbook remains a formula-driven compilation of the exact run."
+    ],
+    "invariants": [
+      "No automatic weighting or composite recovery rate is introduced.",
+      "Unconfigured rates remain explicitly unavailable rather than coerced to zero.",
+      "Professional approval is never inferred from a candidate or an engineering/synthetic profile."
+    ],
+    "acceptanceEvidence": [
+      "Core workbook regression asserting recovery presentation and unchanged formulas.",
+      "Workbench syntax/typecheck after adding the Analyze and Review presentation.",
+      "Conformance-record schema validation."
+    ]
+  },
+  "execution": {
+    "decisions": [
+      {
+        "decision": "Present collection distribution, percent of charges, and composite as parallel, non-calculating rows.",
+        "rationale": "It exposes method choice, evidence gaps, components, and override semantics without changing the legacy calculation or inventing automatic weighting."
+      },
+      {
+        "decision": "Present composite recovery as a governed candidate and state its override precedence.",
+        "rationale": "A composite requires combination inputs, rationale, reviewer authority, and approval; its first matching segment override must not be mistaken for an automatic weighting policy."
+      }
+    ],
+    "observedBehaviour": [
+      "Analyze injects a run-bound recovery-method presentation with parallel methods, evidence-state, components, override, and composite-boundary columns.",
+      "Review includes the same recovery-method boundary before the candidate queue.",
+      "The compiled workbook now includes Recovery Methods and preserves the legacy Recovery Analysis formulas and draft-release boundary."
+    ],
+    "evidence": [
+      {"kind":"test","reference":"pnpm --filter @redwood/core test","result":"43/43 tests passed, including the workbook recovery-presentation regression and reusable recovery-method tests."},
+      {"kind":"test","reference":"pnpm --filter @redwood/workbench typecheck","result":"Passed Node syntax checks for the new recovery-method client module and existing workbench files."},
+      {"kind":"test","reference":"node scripts/validate-conformance.mjs docs/evidence/redwood-recovery-method-presentation-001.conformance.json","result":"Validated against the HiveForge conformance schema."}
+    ]
+  },
+  "conformance": {
+    "status": "conforms-with-understood-divergence",
+    "divergences": [{
+      "expected": "Each displayed parallel method has run-bound recovery evidence and a persisted approval lifecycle.",
+      "observed": "The reusable recovery engine is intentionally not wired into existing analysis runs; the presentation therefore labels the methods as not evaluated when no recovery-method record is attached.",
+      "classification": "architectural-weakness",
+      "status": "understood"
+    }]
+  },
+  "learning": {
+    "recurringPattern": "A configured calculation profile cannot silently become a professional composite decision.",
+    "improvementProposal": "Integrate recovery-engine results and governed composite approvals only through a separately approved run-bound ledger contract.",
+    "durableKnowledge": ["Recovery-method presentation must not imply automatic weighting or professional approval.", "First-match segment overrides are precedence rules, not weights."]
+  },
+  "completion": {"capabilitySatisfied":true,"invariantsPreserved":true,"evidenceSufficient":true,"reviewRequired":true}
+}
