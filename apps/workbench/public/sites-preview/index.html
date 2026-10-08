@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="description" content="Redwood Sites composition preview backed only by canonical persisted-run evidence.">
+  <title>Redwood · Engagement preview</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to engagement</a>
+  <div class="shell">
+    <aside class="rail" aria-label="Engagement navigation">
+      <a class="wordmark" href="/" aria-label="Return to Redwood Workbench">REDWOOD <span>Quality of Revenue</span></a>
+      <button class="mobile-nav-toggle" id="mobile-nav-toggle" type="button" aria-expanded="false" aria-controls="workflow-nav">Workflow</button>
+      <nav class="workflow-nav" id="workflow-nav" aria-label="Canonical workflow phases">
+        <a class="active" href="#engagement"><b>00</b> Engagement</a>
+        <a data-phase-link="Intake" href="/next/index.html"><b>01</b> Intake</a>
+        <a data-phase-link="Map" href="/next/index.html"><b>02</b> Map</a>
+        <a data-phase-link="Reconcile" href="/next/index.html"><b>03</b> Reconcile</a>
+        <a data-phase-link="Migration" href="/next/index.html"><b>04</b> Migration evidence</a>
+        <a data-phase-link="Analyze" href="/next/index.html"><b>05</b> Analyze</a>
+        <a data-phase-link="Review" href="/next/index.html"><b>06</b> Review</a>
+        <a data-phase-link="Export" href="/next/index.html"><b>07</b> Export</a>
+      </nav>
+      <div class="rail-foot"><span class="status-dot"></span> Sites composition port<br><small>Canonical API · read-only preview</small></div>
+    </aside>
+
+    <main id="main" tabindex="-1">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Professional evidence review</p>
+          <h1 id="engagement-title">Canonical engagement required</h1>
+          <p id="engagement-subtitle">Open this preview with <code>?run=…</code> to load an existing persisted run.</p>
+        </div>
+        <div class="top-actions">
+          <button id="evidence-button" class="button button-primary" type="button" disabled>Evidence drawer</button>
+        </div>
+      </header>
+      <section id="notice" aria-live="assertive"></section>
+      <section id="run-meta" class="run-meta" aria-live="polite"></section>
+      <section id="engagement" class="engagement" aria-live="polite"></section>
+    </main>
+  </div>
+
+  <aside id="evidence-drawer" class="evidence-drawer" aria-label="Run-bound evidence drawer" aria-hidden="true">
+    <header class="drawer-head">
+      <div><p class="eyebrow">Run-bound evidence</p><h2 id="drawer-title">Evidence drawer</h2></div>
+      <button id="close-drawer" class="icon-button" type="button" aria-label="Close evidence drawer">×</button>
+    </header>
+    <p class="drawer-boundary">This inventory is reported from the canonical run. It is not a professional conclusion, approval, or release record.</p>
+    <div id="drawer-content"></div>
+  </aside>
+  <div id="drawer-scrim" class="scrim" hidden></div>
+  <script src="./app.js"></script>
+</body>
+</html>

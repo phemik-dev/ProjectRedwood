@@ -1,0 +1,106 @@
+{
+  "policyVersion": "hiveforge.intent-reality.v1",
+  "work": {
+    "id": "redwood-sites-source-port-001",
+    "title": "Canonical run-backed Sites Engagement preview",
+    "scope": "substantial",
+    "authority": [
+      "Direct request to create /sites-preview from recovered Sites composition, limited to the Engagement page and existing canonical run API."
+    ]
+  },
+  "intent": {
+    "productGoal": "Provide a Sites-composition Engagement preview that orients healthcare QoR reviewers on actual persisted-run conditions without substituting invented figures or authority.",
+    "capability": "A static /sites-preview page accepts ?run=..., reads the existing canonical run API, and renders its gates, reconciliations, findings, source inventory, contextual drawer, and workflow/lens navigation.",
+    "architecturalIntent": [
+      "The isolated preview is a read-only static asset served by the existing Workbench and calls only GET /api/runs/:id.",
+      "The recovered Sites implementation is a composition reference; its illustrative data, local calculation, simulated review, and simulated release state are excluded.",
+      "Engagement remains an overview lens adjacent to, not a replacement for, the seven existing canonical workflow capabilities."
+    ],
+    "invariants": [
+      "Root, /next, backend/API, canonical calculations, source evidence, review authority, and workbook remain unchanged.",
+      "Unreconciled differences, findings, and non-passed gates remain visible and are never locally reconciled or approved.",
+      "The preview makes no mutations, financial calculation, professional decision, approval, or release inference.",
+      "A missing reconciliation-to-document thread is disclosed instead of fabricated."
+    ],
+    "acceptanceEvidence": [
+      "node --check validates the preview script and existing parallel Workbench script.",
+      "pnpm run typecheck and pnpm run build validate the Workbench after the port.",
+      "Existing http://127.0.0.1:4173 returns the preview assets and persisted-run API response with HTTP 200.",
+      "Diff review confirms protected root, /next, backend, and build surfaces are unchanged."
+    ]
+  },
+  "execution": {
+    "decisions": [
+      {
+        "decision": "Require a run query parameter rather than selecting or inventing a default run.",
+        "rationale": "The selected persisted run remains the sole authority for displayed healthcare QoR values and state."
+      },
+      {
+        "decision": "Keep the Sites drawer but provide run-level inventory with an explicit source-thread limitation.",
+        "rationale": "This preserves the contextual-drawer interaction without claiming evidence relationships the canonical API does not expose."
+      },
+      {
+        "decision": "Retain lens and navigation interactions as client-side presentation only.",
+        "rationale": "They preserve visual composition without creating calculations, decisions, approvals, or release authority."
+      }
+    ],
+    "observedBehaviour": [
+      "GET /api/runs/c8f21c7f-82a5-47a1-9d21-ab78af14660a returned HTTP 200 with 8 gates, 4 reconciliations, 1 finding, and 7 source inventory records.",
+      "GET /sites-preview/index.html?run=c8f21c7f-82a5-47a1-9d21-ab78af14660a, its stylesheet, and its JavaScript each returned HTTP 200 from the existing port 4173.",
+      "The observed canonical state includes a 453,931-cent ar-to-gl difference, open/blocked gates, and unset materiality; the port presents it rather than changing it."
+    ],
+    "evidence": [
+      {
+        "kind": "test",
+        "reference": "apps/workbench: node --check public/sites-preview/app.js; node --check public/next/workbench-next.js; pnpm run typecheck; pnpm run build; git diff --check",
+        "result": "Passed. Build copied the preview into the ignored static dist output."
+      },
+      {
+        "kind": "trace",
+        "reference": "http://127.0.0.1:4173/sites-preview/index.html?run=c8f21c7f-82a5-47a1-9d21-ab78af14660a and /api/runs/c8f21c7f-82a5-47a1-9d21-ab78af14660a",
+        "result": "All requested preview assets and canonical API response returned HTTP 200."
+      },
+      {
+        "kind": "review",
+        "reference": "git diff -- apps/workbench/public/index.html apps/workbench/public/app.js apps/workbench/server.mjs apps/workbench/build.mjs apps/workbench/public/next/index.html apps/workbench/public/next/workbench-next.js",
+        "result": "No diff in protected root, backend/build, or /next surfaces."
+      },
+      {
+        "kind": "artifact",
+        "reference": "docs/evidence/redwood-sites-source-port-001.md",
+        "result": "Records the source-port mapping, actual run evidence, preserved authority boundaries, and known API-thread limitation."
+      }
+    ]
+  },
+  "conformance": {
+    "status": "conforms-with-understood-divergence",
+    "divergences": [
+      {
+        "expected": "A Sites-style selected reconciliation can open a source-document-specific evidence trail.",
+        "observed": "The existing canonical API provides run-level source inventory and finding references but no reconciliation-specific document/calculation/review thread identity.",
+        "classification": "architectural-weakness",
+        "status": "understood"
+      },
+      {
+        "expected": "A browser-rendered screenshot would provide visual runtime evidence.",
+        "observed": "No installed browser automation or browser executable was available in this session; HTTP asset/API traces and syntax/build validation were captured instead.",
+        "classification": "environment",
+        "status": "understood"
+      }
+    ]
+  },
+  "learning": {
+    "recurringPattern": "Illustrative composition ports need a strict separation between reusable layout/interaction patterns and non-reusable business facts or simulated authority.",
+    "improvementProposal": null,
+    "durableKnowledge": [
+      "The static Workbench server serves new files under public immediately at port 4173; build copies them to ignored dist assets without starting a second server.",
+      "The canonical run API can support condition-first engagement orientation but cannot attribute a reconciliation to a specific source-document/calculation/review thread."
+    ]
+  },
+  "completion": {
+    "capabilitySatisfied": true,
+    "invariantsPreserved": true,
+    "evidenceSufficient": true,
+    "reviewRequired": false
+  }
+}
