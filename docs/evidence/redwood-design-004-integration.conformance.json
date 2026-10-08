@@ -38,7 +38,7 @@
       },
       {
         "decision": "Replace only the prototype financial extract authority with an asynchronous GET /api/runs/:id adapter.",
-        "rationale": "The canonical persisted run owns financial facts; a failed request is shown explicitly rather than being replaced with embedded fixture data."
+        "rationale": "The canonical persisted run owns financial facts; missing, invalid, or failed run requests are shown explicitly rather than being replaced with embedded fixture data."
       },
       {
         "decision": "Add a narrow 390px lens layout correction after observing clipped lens access in an initial mobile capture.",
