@@ -1,0 +1,86 @@
+{
+  "policyVersion": "hiveforge.intent-reality.v1",
+  "work": {
+    "id": "redwood-sites-fidelity-overview-001",
+    "title": "Sites-informed canonical engagement overview",
+    "scope": "substantial",
+    "authority": [
+      "Direct request to implement only the first corrected engagement overview on feature/redwood-sites-fidelity."
+    ]
+  },
+  "intent": {
+    "productGoal": "Present a condition-first engagement overview that helps a reviewer act on actual canonical run state.",
+    "capability": "The isolated /next engagement overview renders canonical gate, reconciliation, finding, source-inventory, and release-gate data through work, review, and decision lenses.",
+    "architecturalIntent": [
+      "The overview remains a static /next frontend and reads only existing canonical API/run state.",
+      "The seven canonical workflow capabilities remain present and reachable; the overview is not an eighth workflow capability."
+    ],
+    "invariants": [
+      "The root fallback, backend, canonical calculations, persisted runs, and existing phase screens remain unchanged.",
+      "Unreconciled differences, open findings, blocked gates, and release authority remain visible and are never inferred away.",
+      "The frontend creates no financial calculations, professional decisions, or release authority."
+    ],
+    "acceptanceEvidence": [
+      "Syntax, established Workbench typecheck, and static build pass.",
+      "Existing server serves /next/index.html and a canonical persisted-run API response.",
+      "Diff review confirms root and backend files are unchanged."
+    ]
+  },
+  "execution": {
+    "decisions": [
+      {
+        "decision": "Add an Engagement overview entry before, but separate from, the seven workflow capabilities.",
+        "rationale": "This supplies the requested first screen without redefining the canonical workflow."
+      },
+      {
+        "decision": "Derive every condition, figure, workflow label, and release position from the loaded canonical run.",
+        "rationale": "This prevents fictional data and preserves API/run-state authority."
+      }
+    ],
+    "observedBehaviour": [
+      "GET /next/index.html returned 200 and contains the Engagement overview entry.",
+      "Persisted run c8f21c7f-82a5-47a1-9d21-ab78af14660a returned 8 gates, 4 reconciliations, and 1 finding for overview rendering."
+    ],
+    "evidence": [
+      {
+        "kind": "test",
+        "reference": "apps/workbench: node --check public/next/workbench-next.js; pnpm run typecheck; pnpm run build; git diff --check",
+        "result": "All passed."
+      },
+      {
+        "kind": "trace",
+        "reference": "Existing Workbench at http://127.0.0.1:4173/next/index.html and /api/runs/c8f21c7f-82a5-47a1-9d21-ab78af14660a",
+        "result": "Both requests returned 200 with the expected overview entry and canonical run state."
+      },
+      {
+        "kind": "review",
+        "reference": "git diff -- apps/workbench/public/index.html apps/workbench/public/app.js apps/workbench/server.mjs apps/workbench/build.mjs",
+        "result": "No diff."
+      }
+    ]
+  },
+  "conformance": {
+    "status": "conforms-with-understood-divergence",
+    "divergences": [
+      {
+        "expected": "Each material reconciliation figure can open a source-document-specific evidence thread, as in the illustrative Sites reference.",
+        "observed": "The existing canonical API exposes run-bound source inventory and findings but no reconciliation-to-document thread identity; the overview opens the established run-bound evidence drawer instead.",
+        "classification": "architectural-weakness",
+        "status": "understood"
+      }
+    ]
+  },
+  "learning": {
+    "recurringPattern": "A condition-first overview can improve engagement orientation when it consumes canonical state rather than summarizing invented business facts.",
+    "improvementProposal": null,
+    "durableKnowledge": [
+      "Sites visual patterns are adapted only at the overview layer; their illustrative figures and simulated authority were not reused."
+    ]
+  },
+  "completion": {
+    "capabilitySatisfied": true,
+    "invariantsPreserved": true,
+    "evidenceSufficient": true,
+    "reviewRequired": false
+  }
+}
