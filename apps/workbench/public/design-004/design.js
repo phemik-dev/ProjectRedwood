@@ -47,7 +47,7 @@ const gateLabel = id => ({ G0: "Scope approval", G1: "Source quality", G2: "Mapp
 function conditionCopy() {
   const ar = arControl(), release = gate("G7"), open = openControls();
   if (state.lens === "review") return { state: "Review outstanding", lead: open.length ? `${open.length} recorded reconciliation difference${open.length === 1 ? " remains" : "s remain"} subject to professional scrutiny.` : "Recorded evidence requires professional scrutiny.", detail: "Arithmetic observations, materiality, disposition, and review remain distinct." };
-  if (state.lens === "decision") return { state: releaseAuthorizationCopy(), lead: hasReleaseAuthority() ? release?.rationale || "Verified release record is current for this canonical run." : "Release authorization unverified.", detail: "This presentation does not create a conclusion, decision, or release authority." };
+  if (state.lens === "decision") return { state: releaseAuthorizationCopy(), lead: hasReleaseAuthority() ? release?.rationale || "Verified release record is current for this canonical run." : releaseAuthorizationCopy(), detail: "This presentation does not create a conclusion, decision, or release authority." };
   return { state: open.length ? "In progress" : "Recorded controls available", lead: open.length ? `${open.length} recorded difference${open.length === 1 ? " remains" : "s remain"} visible in the reconciliation controls.` : "Recorded comparisons can be inspected without inferring a completed conclusion.", detail: ar ? `${ar.label} records ${money(ar.difference)}; professional materiality is ${unavailable(ar.materialityStatus)}.` : "Professional significance is not inferred by this presentation." };
 }
 function header() {
