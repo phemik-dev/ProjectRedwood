@@ -1,0 +1,95 @@
+{
+  "policyVersion": "hiveforge.intent-reality.v1",
+  "work": {
+    "id": "redwood-design-004-integration",
+    "title": "Approved Design 004 canonical-run presentation",
+    "scope": "substantial",
+    "authority": [
+      "Direct user instruction to implement approved Design 004 source-first under apps/workbench/public/design-004/.",
+      ".tmp/design-004-source/healthcare-qor/DESIGN-TO-DATA.md.",
+      "Project Redwood invariant: unreconciled differences must be surfaced and never silently forced to balance."
+    ]
+  },
+  "intent": {
+    "productGoal": "Provide the approved evidence-first healthcare QoR Design 004 as an isolated Workbench presentation of a canonical persisted run.",
+    "capability": "Serve Design 004 at /design-004/index.html, bind its financial and evidence state solely through GET /api/runs/:id, retain Workbench/Review/Decision lenses, selected A/R contextual evidence, seven workflow hand-offs, and responsive behavior.",
+    "architecturalIntent": [
+      "The approved prototype DOM, CSS, interaction model, typography, and information architecture are the starting source architecture.",
+      "The canonical Workbench run API remains the only financial and evidence authority; the presentation performs no financial calculation and sends no writes.",
+      "The Design 004 directory is a parallel static surface and does not replace the root Workbench, /next, server, or API implementation."
+    ],
+    "invariants": [
+      "Unreconciled A/R and all blocked/open governance status remain visible; no presentation path plugs, offsets, or conceals a residual.",
+      "Observed evidence, derived arithmetic, professional judgment, decisions, disposition, and release authority remain distinct.",
+      "If canonical data is unavailable, the page explicitly reports that state rather than supplying local fallback financial data."
+    ],
+    "acceptanceEvidence": [
+      "Static syntax, typecheck, and build validation.",
+      "HTTP observation of root, Design 004, and canonical-run API endpoints on the local Workbench server.",
+      "Runtime screenshots for selected A/R evidence, Review, and 390px Decision mobile composition.",
+      "Diff review demonstrating excluded root, server, and build surfaces remain unchanged."
+    ]
+  },
+  "execution": {
+    "decisions": [
+      {
+        "decision": "Copy the approved prototype source assets into the isolated public/design-004 directory and retain the exact base stylesheet.",
+        "rationale": "This preserves source-first fidelity while making the presentation reversible and isolated."
+      },
+      {
+        "decision": "Replace only the prototype financial extract authority with an asynchronous GET /api/runs/:id adapter.",
+        "rationale": "The canonical persisted run owns financial facts; a failed request is shown explicitly rather than being replaced with embedded fixture data."
+      },
+      {
+        "decision": "Add a narrow 390px lens layout correction after observing clipped lens access in an initial mobile capture.",
+        "rationale": "All three required professional perspectives must remain accessible on narrow screens without changing the design information architecture."
+      }
+    ],
+    "observedBehaviour": [
+      "GET /api/runs/c8f21c7f-82a5-47a1-9d21-ab78af14660a returned the exact canonical run with four reconciliation controls, seven source records, one finding, and eight gates.",
+      "The selected A/R drawer visibly renders $4,539.31, explicit A/R snapshot versus GL A/R, unresolved arithmetic status, unset materiality, the linked open finding, and contextual source references.",
+      "Review renders the A/R scrutiny question and preserves the distinction between the observed difference and absent professional judgment.",
+      "The 390px Decision capture shows the mobile workspace control, Workbench/Review/Decision lens access, release-blocked condition, and stacked conclusion boundaries."
+    ],
+    "evidence": [
+      {
+        "kind": "test",
+        "reference": "apps/workbench: node --check public/design-004/design.js; pnpm run typecheck; pnpm run build",
+        "result": "Passed; the static build copied Design 004 into dist/design-004."
+      },
+      {
+        "kind": "trace",
+        "reference": "Local Workbench server PORT=4174: GET /, GET /design-004/index.html, GET /api/runs/c8f21c7f-82a5-47a1-9d21-ab78af14660a",
+        "result": "All endpoints returned HTTP 200."
+      },
+      {
+        "kind": "artifact",
+        "reference": "docs/evidence/design-004-screenshots/workbench-ar-evidence.png, review.png, decision-mobile-final-2.png",
+        "result": "Runtime captures show desktop selected evidence, desktop Review, and mobile Decision behavior against the canonical endpoint."
+      },
+      {
+        "kind": "review",
+        "reference": "git diff -- apps/workbench/public/index.html apps/workbench/public/app.js apps/workbench/server.mjs apps/workbench/build.mjs",
+        "result": "No diff; excluded root, server, and build surfaces were not changed."
+      }
+    ]
+  },
+  "conformance": {
+    "status": "conforms",
+    "divergences": []
+  },
+  "learning": {
+    "recurringPattern": "Approved visual source assets can remain faithful while a very small adapter substitutes canonical runtime authority for a design-only extract.",
+    "improvementProposal": "If Design 004 becomes a supported product route, explicitly register its directory entry and add browser interaction coverage for the seven presentation hand-offs without widening its API authority.",
+    "durableKnowledge": [
+      "Design 004 is opened at /design-004/index.html and accepts ?run=<canonical-run-id>, plus the source-preserved view and evidence query parameters.",
+      "The static server serves nested public assets directly; this integration needs no backend routing change."
+    ]
+  },
+  "completion": {
+    "capabilitySatisfied": true,
+    "invariantsPreserved": true,
+    "evidenceSufficient": true,
+    "reviewRequired": false
+  }
+}
