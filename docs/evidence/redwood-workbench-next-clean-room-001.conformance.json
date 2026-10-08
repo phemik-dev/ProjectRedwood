@@ -11,7 +11,7 @@
   },
   "intent": {
     "productGoal": "Give professional reviewers a calm, evidence-first parallel Workbench presentation without altering canonical economics, evidence, gates, workbook behavior, or the existing root UI.",
-    "capability": "Serve an isolated /next frontend that reads and writes only existing Workbench canonical API/run state and presents all seven canonical phases—Intake, Map, Reconcile, Migration evidence, Analyze, Review, and Export—with evidence, uncertainty, and decision lenses.",
+    "capability": "Serve an isolated /next frontend that reads and writes only existing Workbench canonical API/run state and presents all seven canonical phases—Intake, Map, Reconcile, Migration evidence, Analyze, Review, and Export—with evidence, uncertainty, and decision lenses; Intake carries current and prior-comparison scope dates to the existing canonical API.",
     "architecturalIntent": [
       "The /next path is a static parallel surface under public/next and does not replace or import the root frontend.",
       "Canonical API endpoints and persisted run state remain the only operational authority; the frontend performs no financial calculation.",
@@ -37,12 +37,17 @@
       {
         "decision": "Use only established API endpoints and fields already consumed by the current public Workbench, plus the existing run lookup needed to load a persisted canonical run by URL.",
         "rationale": "This preserves canonical calculation and governance authority while avoiding backend or workbook scope changes."
+      },
+      {
+        "decision": "Treat missing monetary values as unavailable, require an active canonical release record in addition to G7, and reload the run after review writes.",
+        "rationale": "The presentation must not turn absent evidence into zero, infer release authority from G7 alone, or display stale gate state."
       }
     ],
     "observedBehaviour": [
       "The server served the legacy root (200), the isolated /next/index.html entry (200), and the /next JavaScript asset (200) concurrently.",
       "Persisted canonical run c8f21c7f-82a5-47a1-9d21-ab78af14660a returned four reconciliations, one finding, eight gates, seven source-inventory entries, and blocked G7; the parallel UI consumes those fields directly.",
       "Persisted migration run 3f1715a9-4c60-4097-bb11-d141f29b3d04 exposed canonical migration evidence with four source-system contributions, two crosswalk-coverage records, and passed G4; the new Migration evidence phase renders this state without calculation or normalization.",
+      "The parallel Intake form exposes prior-comparison start and end dates and sends both values as priorComparableStart and priorComparableEnd within the existing canonical scope payload.",
       "The root index and root app JavaScript had no working-tree diff and retained SHA-256 values B093104A6DFA5776CE5ECB5B972731369EB0F0B9BF132B6E37C899AA5E80313E and 383D64F2C9C45E0B419D98FFB16FF20A115A4BD6FA0D404551CA52FA3E6DFC8A."
     ],
     "evidence": [
