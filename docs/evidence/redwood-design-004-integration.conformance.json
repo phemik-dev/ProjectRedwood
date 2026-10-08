@@ -90,6 +90,6 @@
     "capabilitySatisfied": true,
     "invariantsPreserved": true,
     "evidenceSufficient": true,
-    "reviewRequired": false
+    "reviewRequired": true
   }
 }
