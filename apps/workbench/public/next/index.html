@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Redwood Workbench — Evidence review</title>
+  <link rel="stylesheet" href="./workbench-next.css">
+</head>
+<body>
+  <div class="shell">
+    <aside class="rail" aria-label="Workbench phases">
+      <a class="wordmark" href="/" aria-label="Return to current Redwood Workbench">REDWOOD <span>Quality of Revenue</span></a>
+      <nav id="phase-nav" class="phase-nav" aria-label="Workflow phases">
+        <button type="button" data-phase="Intake"><b>01</b> Intake</button>
+        <button type="button" data-phase="Map"><b>02</b> Map</button>
+        <button type="button" data-phase="Reconcile"><b>03</b> Reconcile</button>
+        <button type="button" data-phase="Migration"><b>04</b> Migration evidence</button>
+        <button type="button" data-phase="Analyze"><b>05</b> Analyze</button>
+        <button type="button" data-phase="Review"><b>06</b> Review</button>
+        <button type="button" data-phase="Export"><b>07</b> Export</button>
+      </nav>
+      <div class="rail-foot"><span class="dot"></span> Parallel clean-room view<br><small>Canonical API · no local calculations</small></div>
+    </aside>
+    <main>
+      <header class="topbar">
+        <div><p class="kicker">Professional evidence review</p><h1 id="engagement-title">New engagement</h1><p id="engagement-subtitle">Construct an intake or open a canonical run with <code>?run=…</code>.</p></div>
+        <div class="top-actions"><button id="lens-button" class="quiet" type="button" aria-pressed="false">Uncertainty lens</button><button id="evidence-button" class="primary" type="button">Evidence drawer <span id="evidence-count">0</span></button></div>
+      </header>
+      <section id="run-strip" class="run-strip" aria-live="polite"></section>
+      <section id="notice" aria-live="assertive"></section>
+      <section id="view" class="view" aria-live="polite"></section>
+    </main>
+  </div>
+  <aside id="evidence-drawer" class="drawer" aria-label="Evidence drawer" aria-hidden="true">
+    <div class="drawer-head"><div><p class="kicker">Run-bound evidence</p><h2>Evidence drawer</h2></div><button id="close-drawer" class="icon" type="button" aria-label="Close evidence drawer">×</button></div>
+    <p class="drawer-boundary">Evidence is reported from the canonical run. It is not a professional conclusion.</p>
+    <div id="drawer-content"></div>
+  </aside>
+  <div id="drawer-scrim" class="scrim" hidden></div>
+  <dialog id="decision-dialog"><form id="decision-form" method="dialog"><header><p class="kicker">Review decision</p><h2 id="dialog-title">Record decision</h2></header><input id="dialog-gate" type="hidden" name="gate"><input id="dialog-finding" type="hidden" name="findingId"><label>Decision <select name="decision"><option value="noted">Noted</option><option value="approved">Approved</option><option value="rejected">Rejected</option><option value="reviewed">Reviewed</option><option value="resolved">Resolved</option><option value="accepted_with_exception">Accepted with exception</option></select></label><div class="form-grid"><label>Reviewer <input required name="reviewer" autocomplete="name"></label><label>Role <input required name="role" value="Advisor"></label></div><label>Rationale <textarea required name="rationale" placeholder="Professional basis for this decision"></textarea></label><label>Evidence references <input required name="evidenceReferences" placeholder="Source file/hash/row or workpaper reference"></label><footer><button class="quiet" value="cancel">Cancel</button><button class="primary" value="submit">Record run-bound decision</button></footer></form></dialog>
+  <script type="module" src="./workbench-next.js"></script>
+</body>
+</html>
