@@ -33,7 +33,7 @@ const gates = () => list(run?.gates);
 const gate = id => gates().find(item => item?.gate === id);
 const identity = () => unavailable(run?.scope?.dealId ?? run?.id);
 const openControls = () => controls().filter(item => item?.arithmeticStatus === "difference");
-const arControl = () => openControls()[0] || controls().find(item => /a\/r/i.test(item?.label || ""));
+const arControl = () => control("ar-to-gl") || controls().find(item => /a\/r/i.test(item?.label || ""));
 const activeRecords = field => list(run?.[field]).filter(item => !item?.invalidatedAt && item?.status !== "invalidated");
 const verifiedReleaseRecord = () => activeRecords("releaseRecords").find(record => record?.decision === "approved" && record?.runId === run?.id && record?.methodProfileId === run?.profile?.id && record?.methodVersion === run?.profile?.version && record?.dependencyFingerprint === run?.dependencyFingerprint && list(record?.gateSnapshot).some(snapshot => snapshot?.gate === "G7" && snapshot?.status === "passed"));
 const hasReleaseAuthority = () => gate("G7")?.status === "passed" && Boolean(verifiedReleaseRecord());
