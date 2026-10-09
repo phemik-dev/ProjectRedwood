@@ -5,7 +5,7 @@
   "packageManager": "pnpm@12.3.4",
   "scripts": {
     "build": "pnpm --filter @redwood/core build && pnpm --filter @redwood/workbench build",
-    "test": "pnpm --filter @redwood/core test && node --test test/source-registry.test.mjs test/design-004-release-authorization.test.mjs test/design-004-corpus-g-regression.test.mjs test/design-004-d01-d04-remediation.test.mjs test/design-004-drawer-accessibility.test.mjs",
+    "test": "pnpm --filter @redwood/core test && node --test test/source-registry.test.mjs test/design-004-release-authorization.test.mjs test/design-004-corpus-g-regression.test.mjs test/design-004-d01-d04-remediation.test.mjs test/design-004-d03-finding-authority.test.mjs test/design-004-drawer-accessibility.test.mjs",
     "test:source-registry": "node --test test/source-registry.test.mjs",
     "validate:source-registry": "node scripts/validate-source-registry.mjs data-estate/source-registry.v1.json",
     "typecheck": "pnpm --filter @redwood/core typecheck && pnpm --filter @redwood/workbench typecheck",

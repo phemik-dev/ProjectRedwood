@@ -85,6 +85,7 @@ test("D03: A/R review and decision bind only to ar-to-gl and reflect its own sta
   assert.match(review, /canonical A\/R control records arithmetic agreement/);
   assert.match(review, />Arithmetic agreement<\/span>/);
   assert.doesNotMatch(review, /Derived · open finding/);
+  assert.doesNotMatch(review, />Open finding<\/span>/);
   assert.doesNotMatch(review, /What explains the \$123\.45 difference/);
   assert.match(decision, /A\/R snapshot to GL A\/R records arithmetic agreement\./);
   assert.match(decision, /Arithmetic agreement · materiality over-materiality recorded/);
