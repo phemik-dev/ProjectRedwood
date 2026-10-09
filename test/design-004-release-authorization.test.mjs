@@ -75,7 +75,11 @@ test("Design 004 renders unverified authorization for invalid release-record sce
     ["wrong version", run => { const record = approvedRecord(); record.methodVersion = "2.0.0"; run.releaseRecords.push(record); }],
     ["stale dependency fingerprint", run => { const record = approvedRecord(); record.dependencyFingerprint = "stale"; run.releaseRecords.push(record); }],
     ["missing G7 snapshot", run => { const record = approvedRecord(); record.gateSnapshot = []; run.releaseRecords.push(record); }],
-    ["invalidated record", run => { const record = approvedRecord(); record.invalidatedAt = "2026-01-01T00:00:00Z"; run.releaseRecords.push(record); }]
+    ["invalidated record", run => { const record = approvedRecord(); record.invalidatedAt = "2026-01-01T00:00:00Z"; run.releaseRecords.push(record); }],
+    ["both fingerprint bindings omitted", run => { delete run.dependencyFingerprint; const record = approvedRecord(); delete record.dependencyFingerprint; run.releaseRecords.push(record); }],
+    ["both version bindings omitted", run => { delete run.profile.version; const record = approvedRecord(); delete record.methodVersion; run.releaseRecords.push(record); }],
+    ["both fingerprint bindings empty", run => { run.dependencyFingerprint = ""; const record = approvedRecord(); record.dependencyFingerprint = ""; run.releaseRecords.push(record); }],
+    ["both version bindings null", run => { run.profile.version = null; const record = approvedRecord(); record.methodVersion = null; run.releaseRecords.push(record); }]
   ];
 
   for (const [name, arrange] of scenarios) {

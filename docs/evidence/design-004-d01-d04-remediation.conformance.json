@@ -1,0 +1,98 @@
+{
+  "policyVersion": "hiveforge.intent-reality.v1",
+  "work": {
+    "id": "design-004-d01-d04-remediation",
+    "title": "Design 004 independent acceptance remediation D01-D04",
+    "scope": "substantial",
+    "authority": [
+      "Direct user instruction to implement D01-D04 from the independent Design 004 acceptance report.",
+      "Independent report .tmp/design004-independent/Redwood_Design_004_Acceptance/REDWOOD_DESIGN_004_WORK_ACCEPTANCE_REPORT_001.md.",
+      "Project Redwood invariant: unreconciled differences remain visible and are never silently forced to balance."
+    ]
+  },
+  "intent": {
+    "productGoal": "Keep the isolated Design 004 presentation trustworthy when canonical run data differs from the original reference run.",
+    "capability": "Fail closed for incomplete release bindings and invalid API responses, state materiality honestly, and render A/R review and decision narratives from the canonical A/R control identity and its own state.",
+    "architecturalIntent": [
+      "Design 004 remains a read-only, isolated static presentation using GET /api/runs/:id as its sole financial authority.",
+      "The presentation must not infer release authority, materiality, or A/R semantics from missing fields, control ordering, or labels."
+    ],
+    "invariants": [
+      "A release authorization display requires nonempty exact bindings to the canonical run, method profile, version, and dependency fingerprint.",
+      "Unreconciled controls remain separately visible; an A/R narrative only describes reconciliation id ar-to-gl.",
+      "A response with a mismatched identity or missing minimum canonical shape is not rendered as a canonical run and receives no local financial fallback."
+    ],
+    "acceptanceEvidence": [
+      "Executable Node VM tests run the production design.js loader and renderers against the D01-D04 controlled variants.",
+      "Syntax, build, conformance schema, and protected-path diff checks complete without errors."
+    ]
+  },
+  "execution": {
+    "decisions": [
+      {
+        "decision": "Require every compared release binding to be a nonempty string before an approved release record can be displayed as authorization.",
+        "rationale": "Equality of absent values is not evidence of an authority binding."
+      },
+      {
+        "decision": "Expose materiality summary as the explicit enum unavailable, unset, mixed, or recorded.",
+        "rationale": "Missing or heterogeneous control state cannot safely be generalized as recorded materiality."
+      },
+      {
+        "decision": "Resolve A/R solely by canonical reconciliation id ar-to-gl and branch review and decision prose on that control's arithmetic and materiality state.",
+        "rationale": "Control position and labels cannot authorize A/R-specific claims."
+      },
+      {
+        "decision": "Validate response object identity, scope, profile, and required collection fields before rendering.",
+        "rationale": "A requested run must not be silently replaced by another or malformed response."
+      }
+    ],
+    "observedBehaviour": [
+      "VM scenarios reject an API body whose id differs from the requested run and reject a body missing sourceInventory, rendering the explicit unavailable state instead.",
+      "VM scenarios render missing materiality as unavailable, all-unset as unset, heterogeneous valid statuses as mixed, and a uniform assessed state as recorded.",
+      "With a cash residual first and a matched ar-to-gl control, Review and Decision render A/R arithmetic agreement and do not describe the cash residual as A/R or state that A/R remains unresolved.",
+      "VM release scenarios keep authorization unverified when matching version or fingerprint values are omitted, null, or empty."
+    ],
+    "evidence": [
+      {
+        "kind": "test",
+        "reference": "node --test test/design-004-release-authorization.test.mjs test/design-004-corpus-g-regression.test.mjs test/design-004-d01-d04-remediation.test.mjs",
+        "result": "Passed: 6 named production-design.js VM tests, including all D01-D04 scenarios."
+      },
+      {
+        "kind": "test",
+        "reference": "node --check apps/workbench/public/design-004/design.js && git diff --check",
+        "result": "Passed before the final evidence record was written."
+      },
+      {
+        "kind": "review",
+        "reference": "git diff -- apps/workbench/server.mjs apps/workbench/public/index.html apps/workbench/public/app.js apps/workbench/public/next",
+        "result": "No diff; prohibited backend, root, next, and workbook surfaces are unchanged."
+      }
+    ]
+  },
+  "conformance": {
+    "status": "conforms-with-understood-divergence",
+    "divergences": [
+      {
+        "expected": "D01-D04 controlled runtime behaviours are covered by executable VM tests.",
+        "observed": "VM tests prove loader and generated-markup behaviour but not browser layout, focus traversal, or live API persistence.",
+        "classification": "environment",
+        "status": "understood"
+      }
+    ]
+  },
+  "learning": {
+    "recurringPattern": "Presentation authority claims require positive evidence for every identity component; equality alone is insufficient when fields may be absent.",
+    "improvementProposal": "If Design 004 becomes a supported route, formalize the GET run response contract and add browser-level accessibility coverage separately.",
+    "durableKnowledge": [
+      "The Design 004 materiality summary contract is unavailable | unset | mixed | recorded.",
+      "The canonical A/R presentation identity is reconciliation id ar-to-gl; label and list order are not authority."
+    ]
+  },
+  "completion": {
+    "capabilitySatisfied": true,
+    "invariantsPreserved": true,
+    "evidenceSufficient": true,
+    "reviewRequired": true
+  }
+}
