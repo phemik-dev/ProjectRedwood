@@ -1,0 +1,90 @@
+{
+  "policyVersion": "hiveforge.intent-reality.v1",
+  "work": {
+    "id": "design-004-d03-d04-collection-validation",
+    "title": "Design 004 D03 review status and D04 collection-member validation",
+    "scope": "substantial",
+    "authority": [
+      "Direct user instruction on Design 004 branch e3dd8c9.",
+      ".tmp/design004-corpus-g/Redwood_Design_004_Corpus_G_Acceptance/REDWOOD_DESIGN_004_WORK_ACCEPTANCE_REPORT_001.md.",
+      "Project Redwood invariant: unreconciled differences remain visible and are never forced to balance."
+    ]
+  },
+  "intent": {
+    "productGoal": "Keep the isolated Design 004 review presentation truthful when canonical A/R and collection data vary.",
+    "capability": "Render an A/R review item as an open finding only when the canonical A/R reconciliation is a difference, and reject canonical API responses with incomplete required collection members before rendering.",
+    "architecturalIntent": [
+      "Design 004 remains a read-only static presentation whose sole financial authority is GET /api/runs/:id.",
+      "Validation fails closed at the presentation boundary; it neither repairs nor fabricates malformed canonical facts."
+    ],
+    "invariants": [
+      "A matched and assessed A/R control is not represented as an open finding.",
+      "Unreconciled controls remain visible rather than being suppressed or balanced locally.",
+      "Malformed canonical collections render an explicit unavailable state and receive no local financial fallback."
+    ],
+    "acceptanceEvidence": [
+      "Production design.js VM regression tests reproduce matched/assessed A/R and malformed collection-member responses.",
+      "Syntax and targeted Design 004 tests execute against the corrected source.",
+      "Protected-surface diff review confirms backend, root, next, and workbook surfaces are untouched by this remediation."
+    ]
+  },
+  "execution": {
+    "decisions": [
+      {
+        "decision": "Use the generated review-question status in the selected A/R tag instead of a hard-coded open-finding label.",
+        "rationale": "The A/R control's canonical arithmetic state, rather than the existence of another residual or static review styling, determines whether the item is open or in arithmetic agreement."
+      },
+      {
+        "decision": "Validate required identifying, status, and reference members for gates, reconciliations, findings, and source inventory before shell rendering.",
+        "rationale": "A top-level array alone does not prove that the renderer has the canonical identities and statuses it uses to make review claims."
+      }
+    ],
+    "observedBehaviour": [
+      "A run with a cash difference followed by matched, over-materiality ar-to-gl renders the A/R Review item as Arithmetic agreement and does not emit Derived open finding.",
+      "Responses with invalid gate status, reconciliation id or evidence, finding references, or source-inventory hash render Canonical run unavailable and do not render the deal identity.",
+      "Challenge G regression continues to keep cash and A/R residuals independent."
+    ],
+    "evidence": [
+      {
+        "kind": "test",
+        "reference": "node --test test/design-004-d01-d04-remediation.test.mjs test/design-004-corpus-g-regression.test.mjs test/design-004-release-authorization.test.mjs",
+        "result": "Passed: 7 named production-design.js VM regression tests."
+      },
+      {
+        "kind": "test",
+        "reference": "pnpm --dir apps/workbench run build && pnpm --dir apps/workbench run typecheck && node --check apps/workbench/public/design-004/design.js && git diff --check",
+        "result": "Passed."
+      },
+      {
+        "kind": "review",
+        "reference": "git diff -- apps/workbench/server.mjs apps/workbench/public/index.html apps/workbench/public/app.js apps/workbench/public/next apps/workbench/public/design-004/workbook",
+        "result": "No diff; prohibited backend, root, next, and workbook surfaces are unchanged by this work."
+      }
+    ]
+  },
+  "conformance": {
+    "status": "conforms-with-understood-divergence",
+    "divergences": [
+      {
+        "expected": "D03/D04 source behaviours are executable and fail closed.",
+        "observed": "VM tests prove production renderer markup and loader error paths, but do not establish browser layout, focus traversal, or a live persisted-run response.",
+        "classification": "environment",
+        "status": "understood"
+      }
+    ]
+  },
+  "learning": {
+    "recurringPattern": "A top-level array check is insufficient where rendering relies on identities and statuses held by its members.",
+    "improvementProposal": "Formalize a versioned Design 004 GET response schema if this isolated route becomes supported product surface.",
+    "durableKnowledge": [
+      "The selected A/R Review tag must derive from the selected review question status.",
+      "Required Design 004 collection members are gate gate/status, reconciliation id/arithmeticStatus/evidence, finding id/status/references, and source-inventory hash/name."
+    ]
+  },
+  "completion": {
+    "capabilitySatisfied": true,
+    "invariantsPreserved": true,
+    "evidenceSufficient": true,
+    "reviewRequired": true
+  }
+}

@@ -83,6 +83,8 @@ test("D03: A/R review and decision bind only to ar-to-gl and reflect its own sta
   const review = rendered.lens("review");
   const decision = rendered.lens("decision");
   assert.match(review, /canonical A\/R control records arithmetic agreement/);
+  assert.match(review, />Arithmetic agreement<\/span>/);
+  assert.doesNotMatch(review, /Derived · open finding/);
   assert.doesNotMatch(review, /What explains the \$123\.45 difference/);
   assert.match(decision, /A\/R snapshot to GL A\/R records arithmetic agreement\./);
   assert.match(decision, /Arithmetic agreement · materiality over-materiality recorded/);
@@ -101,4 +103,24 @@ test("D04: loader rejects mismatched identities and malformed canonical response
   assert.equal(malformed.fetchCount(), 1);
   assert.match(malformed.html(), /Canonical run unavailable/);
   assert.match(malformed.html(), /missing sourceInventory/);
+});
+
+test("D04: loader rejects invalid required members inside canonical collections before rendering", async () => {
+  const scenarios = [
+    ["gate status", run => { run.gates = [{ gate: "G7" }]; }, /invalid gates\.status/],
+    ["reconciliation identity", run => { run.reconciliations = [{ arithmeticStatus: "matched", evidence: [] }]; }, /invalid reconciliations\.id/],
+    ["reconciliation evidence", run => { run.reconciliations = [{ ...control("ar-to-gl"), evidence: "not-an-array" }]; }, /invalid reconciliations\.evidence/],
+    ["finding references", run => { run.findings = [{ id: "finding-1", status: "open", references: "not-an-array" }]; }, /invalid findings\.references/],
+    ["source inventory hash", run => { run.sourceInventory = [{ name: "claims.csv" }]; }, /invalid sourceInventory\.hash/]
+  ];
+
+  for (const [name, arrange, expected] of scenarios) {
+    const run = baseRun();
+    arrange(run);
+    const rendered = await load(run);
+    assert.equal(rendered.fetchCount(), 1, name);
+    assert.match(rendered.html(), /Canonical run unavailable/, name);
+    assert.match(rendered.html(), expected, name);
+    assert.doesNotMatch(rendered.html(), /Deal 001/, name);
+  }
 });
