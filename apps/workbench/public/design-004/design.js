@@ -54,7 +54,7 @@ const releaseAuthorizationCopy = () => hasReleaseAuthority() ? "Release authoriz
 const sharedReferenceMatchForControl = item => { const references = new Set(list(item?.evidence)); return list(run?.findings).find(candidate => list(candidate?.references).some(reference => references.has(reference))); };
 const sharedReferenceMatchForFinding = item => controls().find(candidate => list(item?.references).some(reference => list(candidate?.evidence).includes(reference)));
 const quarantined = () => list(run?.deal?.quarantined);
-const nextUrl = label => `/next/?run=${encodeURIComponent(run.id)}&phase=${encodeURIComponent(label === "Migration evidence" ? "Migration" : label)}`;
+const nextUrl = label => `/next/index.html?run=${encodeURIComponent(run.id)}&phase=${encodeURIComponent(label === "Migration evidence" ? "Migration" : label)}`;
 const gateLabel = id => ({ G0: "Scope approval", G1: "Source quality", G2: "Mapping approval", G3: "Reconciliation", G4: "Engine execution", G5: "Professional judgment", G6: "Finding disposition & review", G7: "Client release" }[id] || id);
 
 function conditionCopy() {
