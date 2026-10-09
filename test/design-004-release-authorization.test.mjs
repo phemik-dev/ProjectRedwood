@@ -1,35 +1,91 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { readFile } from "node:fs/promises";
+import test from "node:test";
+import vm from "node:vm";
 
 const designPath = new URL("../apps/workbench/public/design-004/design.js", import.meta.url);
-const stylesheetPath = new URL("../apps/workbench/public/design-004/healthcare.css", import.meta.url);
-const source = () => readFile(designPath, "utf8");
 
-test("Design 004 release authority requires current G7 and a verified approved release record", async () => {
-  const design = await source();
-
-  assert.match(design, /const verifiedReleaseRecord = \(\) => activeRecords\("releaseRecords"\)\.find\(record => record\?\.decision === "approved"/);
-  [
-    "!item?.invalidatedAt",
-    'item?.status !== "invalidated"',
-    "record?.runId === run?.id",
-    "record?.methodProfileId === run?.profile?.id",
-    "record?.methodVersion === run?.profile?.version",
-    "record?.dependencyFingerprint === run?.dependencyFingerprint",
-    'snapshot?.gate === "G7" && snapshot?.status === "passed"'
-  ].forEach(requirement => assert.ok(design.includes(requirement), `Missing release-record requirement: ${requirement}`));
-  assert.match(design, /const hasReleaseAuthority = \(\) => gate\("G7"\)\?\.status === "passed" && Boolean\(verifiedReleaseRecord\(\)\);/);
+const baseRun = () => ({
+  id: "run-001",
+  dependencyFingerprint: "fingerprint-001",
+  profile: { id: "qor-healthcare", version: "1.0.0" },
+  scope: { dealId: "Deal 001", currency: "USD" },
+  gates: [{ gate: "G7", status: "passed", rationale: "Authorized by the recorded reviewer." }],
+  reconciliations: [],
+  findings: [],
+  sourceInventory: [],
+  releaseRecords: []
 });
 
-test("Design 004 uses one explicit unverified fallback in desktop and mobile decision paths", async () => {
-  const [design, stylesheet] = await Promise.all([source(), readFile(stylesheetPath, "utf8")]);
+const approvedRecord = () => ({
+  decision: "approved",
+  runId: "run-001",
+  methodProfileId: "qor-healthcare",
+  methodVersion: "1.0.0",
+  dependencyFingerprint: "fingerprint-001",
+  gateSnapshot: [{ gate: "G7", status: "passed" }]
+});
 
-  assert.match(design, /const releaseAuthorizationCopy = \(\) => hasReleaseAuthority\(\) \? "Release authorization recorded\." : "Release authorization unverified\.";/);
-  assert.match(design, /state: releaseAuthorizationCopy\(\), lead: hasReleaseAuthority\(\) \? release\?\.rationale \|\| "Verified release record is current for this canonical run\." : releaseAuthorizationCopy\(\)/);
-  assert.match(design, /<p>\$\{esc\(releaseAuthorizationCopy\(\)\)\}<\/p>/);
-  assert.match(design, /copy = conditionCopy\(\)/);
-  assert.match(stylesheet, /@media\(max-width:560px\)\{[^]*?\.lens\{display:grid!important/);
-  assert.match(design, /\[\["workbench", "Workbench"\], \["review", "Review"\], \["decision", "Decision"\]\]/);
-  assert.ok(stylesheet.includes(".mobile-workflow-button"), "Mobile workflow control must remain styled rather than create separate status copy.");
+async function renderDecision(run) {
+  const source = await readFile(designPath, "utf8");
+  const app = { innerHTML: "" };
+  const document = {
+    body: { classList: { toggle() {} } },
+    addEventListener() {},
+    getElementById(id) { return id === "app" ? app : null; },
+    querySelector() { return null; }
+  };
+  const context = {
+    URLSearchParams,
+    Intl,
+    document,
+    location: { search: "", assign() {} },
+    window: { scrollTo() {}, alert() {} },
+    console
+  };
+  const executable = source.replace(
+    /\nloadCanonicalRun\(\);\s*$/,
+    "\nglobalThis.__design004Test = { setRun: value => { run = value; }, setLens: value => { state.lens = value; }, shell, conditionCopy, decision };"
+  );
+  vm.runInNewContext(executable, context, { filename: designPath.pathname });
+  context.__design004Test.setRun(run);
+  context.__design004Test.setLens("decision");
+  context.__design004Test.shell();
+  return { html: app.innerHTML, copy: context.__design004Test.conditionCopy(), card: context.__design004Test.decision() };
+}
+
+test("Design 004 renders recorded authorization only for a current approved release record", async () => {
+  const run = baseRun();
+  run.releaseRecords.push(approvedRecord());
+
+  const rendered = await renderDecision(run);
+
+  assert.equal(rendered.copy.state, "Release authorization recorded.");
+  assert.match(rendered.html, /Release authorization recorded\./);
+  assert.match(rendered.card, /Release authorization recorded\./);
+  assert.doesNotMatch(rendered.html, /Release authorization unverified\./);
+});
+
+test("Design 004 renders unverified authorization for invalid release-record scenarios", async () => {
+  const scenarios = [
+    ["no G7 pass", run => { run.gates[0].status = "blocked"; run.releaseRecords.push(approvedRecord()); }],
+    ["no release record", () => {}],
+    ["wrong run", run => { const record = approvedRecord(); record.runId = "other-run"; run.releaseRecords.push(record); }],
+    ["wrong profile", run => { const record = approvedRecord(); record.methodProfileId = "other-profile"; run.releaseRecords.push(record); }],
+    ["wrong version", run => { const record = approvedRecord(); record.methodVersion = "2.0.0"; run.releaseRecords.push(record); }],
+    ["stale dependency fingerprint", run => { const record = approvedRecord(); record.dependencyFingerprint = "stale"; run.releaseRecords.push(record); }],
+    ["missing G7 snapshot", run => { const record = approvedRecord(); record.gateSnapshot = []; run.releaseRecords.push(record); }],
+    ["invalidated record", run => { const record = approvedRecord(); record.invalidatedAt = "2026-01-01T00:00:00Z"; run.releaseRecords.push(record); }]
+  ];
+
+  for (const [name, arrange] of scenarios) {
+    const run = baseRun();
+    arrange(run);
+    const rendered = await renderDecision(run);
+
+    assert.equal(rendered.copy.state, "Release authorization unverified.", name);
+    assert.match(rendered.html, /Release authorization unverified\./, name);
+    assert.match(rendered.card, /Release authorization unverified\./, name);
+    assert.doesNotMatch(rendered.html, /Release authorization recorded\./, name);
+  }
 });
